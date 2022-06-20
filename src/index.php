@@ -9,7 +9,7 @@
 
 define('LARAVEL_START', microtime(true));
 
-
+//asdsad
 /*
 |--------------------------------------------------------------------------
 | NEXTLOOP
@@ -29,9 +29,8 @@ define('BASE_PATH', realpath(__DIR__));
 | Composer provides a convenient, automatically generated class loader for
 |
 */
-define('SANITYCHECKS', TRUE);
+define('SANITYCHECKS', true);
 require __DIR__ . '/public/boot/growcrm.php';
-
 
 /*
 |--------------------------------------------------------------------------
@@ -88,9 +87,7 @@ $app->bind('path.base', function () {
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
-$response = $kernel->handle(
-    $request = Illuminate\Http\Request::capture()
-);
+$response = $kernel->handle($request = Illuminate\Http\Request::capture());
 
 $response->send();
 
