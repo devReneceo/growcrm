@@ -19,20 +19,21 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use Log;
 
-class ConfigThemeServiceProvider extends ServiceProvider {
-
+class ConfigThemeServiceProvider extends ServiceProvider
+{
     /**
      * Bootstrap the application services.
      *
      * @return void
      */
-    public function boot() {
-
+    public function boot()
+    {
         //do not run this for SETUP path
         if (env('SETUP_STATUS') != 'COMPLETED') {
             //set default theme
             config([
-                'theme.selected_theme_css' => 'public/themes/default/css/style.css?v=1',
+                'theme.selected_theme_css' =>
+                    'public/themes/default/css/style.css?v=1',
             ]);
             //skip this provider
             return;
@@ -45,19 +46,53 @@ class ConfigThemeServiceProvider extends ServiceProvider {
         $directories = Storage::disk('root')->directories('public/themes');
 
         //clean up directory names
-        array_walk($directories, function (&$value, &$key) {
+        array_walk($directories, function (&$value, $key) {
             $value = str_replace('public/themes/', '', $value);
         });
 
         //check if default theme exists
         if (!in_array($settings->settings_theme_name, $directories)) {
-            Log::critical("The selected theme directory could not be found", ['process' => '[validating theme]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'Theme Directory: ' => '/public/themes/' . $settings->settings_theme_name]);
-            abort(409, __('lang.default_theme_not_found') . ' [' . runtimeThemeName($settings->settings_theme_name) . ']');
+            Log::critical('The selected theme directory could not be found', [
+                'process' => '[validating theme]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+                'Theme Directory: ' =>
+                    '/public/themes/' . $settings->settings_theme_name,
+            ]);
+            abort(
+                409,
+                __('lang.default_theme_not_found') .
+                    ' [' .
+                    runtimeThemeName($settings->settings_theme_name) .
+                    ']'
+            );
         }
 
         //check if css file exists
-        if (!is_file(BASE_DIR . '/public/themes/' . $settings->settings_theme_name . '/css/style.css')) {
-            Log::critical("The selected theme does not seem to have a style.css files", ['process' => '[validating theme]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'Theme Directory: ' => '/public/themes/' . $settings->settings_theme_name]);
+        if (
+            !is_file(
+                BASE_DIR .
+                    '/public/themes/' .
+                    $settings->settings_theme_name .
+                    '/css/style.css'
+            )
+        ) {
+            Log::critical(
+                'The selected theme does not seem to have a style.css files',
+                [
+                    'process' => '[validating theme]',
+                    config('app.debug_ref'),
+                    'function' => __FUNCTION__,
+                    'file' => basename(__FILE__),
+                    'line' => __LINE__,
+                    'path' => __FILE__,
+                    'Theme Directory: ' =>
+                        '/public/themes/' . $settings->settings_theme_name,
+                ]
+            );
             abort(409, __('lang.selected_theme_is_invalid'));
         }
 
@@ -74,20 +109,35 @@ class ConfigThemeServiceProvider extends ServiceProvider {
             'theme.list' => $list,
             'theme.selected_name' => $settings->settings_theme_name,
             //main css file
-            'theme.selected_theme_css' => 'public/themes/' . $settings->settings_theme_name . '/css/style.css?v=' . $settings->settings_system_javascript_versioning,
+            'theme.selected_theme_css' =>
+                'public/themes/' .
+                $settings->settings_theme_name .
+                '/css/style.css?v=' .
+                $settings->settings_system_javascript_versioning,
             //invoice/estimate pdf (web preview)
             //[8 Aug 2021] all themes should now use the 'default' theme's bill-pdf.css file (public/themes/default/css/bill-pdf.css)
-            'theme.selected_theme_pdf_css' => 'public/themes/default/css/bill-pdf.css?v=' . $settings->settings_system_javascript_versioning,
+            'theme.selected_theme_pdf_css' =>
+                'public/themes/default/css/bill-pdf.css?v=' .
+                $settings->settings_system_javascript_versioning,
         ]);
 
         //[user custom theme] - set the theme for the current user (apply to all views)
         view()->composer('*', function ($view) {
             if (auth()->check()) {
                 //validate current theme
-                if (!is_file(BASE_DIR . '/public/themes/' . auth()->user()->pref_theme . '/css/style.css')) {
+                if (
+                    !is_file(
+                        BASE_DIR .
+                            '/public/themes/' .
+                            auth()->user()->pref_theme .
+                            '/css/style.css'
+                    )
+                ) {
                     //set use to default system theme
                     auth()->user()->pref_theme = $settings->settings_theme_name;
-                    auth()->user()->save();
+                    auth()
+                        ->user()
+                        ->save();
                 }
             }
         });
@@ -98,8 +148,8 @@ class ConfigThemeServiceProvider extends ServiceProvider {
      *
      * @return void
      */
-    public function register() {
+    public function register()
+    {
         //
     }
-
 }

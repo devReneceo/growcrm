@@ -1,4 +1,4 @@
-FROM php:8.0-apache
+FROM php:7.2-apache
 USER root
 RUN docker-php-ext-install -j "$(nproc)" opcache
 # RUN docker-php-ext-install - j "$(nproc)" pdo pdo_mysql
