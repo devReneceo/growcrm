@@ -15,7 +15,7 @@
     <!--BOOTSTRAP-->
     <link href="public/vendor/css/bootstrap/bootstrap.min.css" rel="stylesheet">
 
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/brands.min.css">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
     <script src="public/vendor/js/html5shiv/html5shiv.js"></script>

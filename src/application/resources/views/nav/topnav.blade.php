@@ -59,6 +59,33 @@
                 </li>
                 @endif
 
+
+                @if(auth()->user()->level == 'free')
+                <li class="nav-item">
+                    <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
+                        href="javascript:void(0);" data-url="{{ url('events/topnav?eventtracking_status=unread') }}"
+                        data-loading-target="sidepanel-notifications-body" data-target="sidepanel-notifications"
+                        data-progress-bar='hidden' aria-expanded="false">
+                        <i class="sl-icon-trophy"></i>
+                       
+                      Updgrate
+                    </a>
+                </li>
+                 @endif
+
+                 @if(auth()->user()->level == 'premium')
+                <li class="nav-item">
+                    <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
+                        href="javascript:void(0);" data-url="{{ url('events/topnav?eventtracking_status=unread') }}"
+                        data-loading-target="sidepanel-notifications-body" data-target="sidepanel-notifications"
+                        data-progress-bar='hidden' aria-expanded="false">
+                        <i class="sl-icon-screen-smartphone"></i>
+                        
+                        Download App
+                       
+                    </a>
+                </li>
+                @endif
                 <!--timer-->
                 @if(auth()->user()->is_team && config('visibility.modules.timetracking'))
                 <li class="nav-item dropdown hidden-xs-down my-timer-container {{ runtimeVisibility('topnav-timer', request('show_users_running_timer')) }}"
@@ -145,7 +172,7 @@
                 <!-- Reminders Notification-->
 
 
-                <!-- event notifications -->
+                <!-- event notifications.. -->
                 <li class="nav-item">
                     <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
                         href="javascript:void(0);" data-url="{{ url('events/topnav?eventtracking_status=unread') }}"

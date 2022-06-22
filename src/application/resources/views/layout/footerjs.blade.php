@@ -15,7 +15,7 @@
 
 <!--BILLING-->
 <script src="public/js/core/billing.js?v={{ config('system.versioning') }}"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/js/brands.min.js"> </script>
 <!--project page charts-->
 @if(@config('visibility.projects_d3_vendor'))
 <script src="public/vendor/js/d3/d3.min.js?v={{ config('system.versioning') }}"></script>
