@@ -21,9 +21,12 @@ Route::get('/signup', 'Authenticate@signUp');
 Route::post('/signup', 'Authenticate@signUpAction');
 Route::get('/resetpassword', 'Authenticate@resetPassword');
 Route::post('/resetpassword', 'Authenticate@resetPasswordAction');
+
 Route::get('/stripeResponse', function (Request $request) {
-    echo 'Stripe Response: <pre>';
-    print_r($request);
+    if ($requst->type === 'charge.succeeded') {
+        echo '<pre>';
+        print_r($request->data);
+    }
 });
 
 Route::get('/canceledStripeResponse', function (Request $request) {
