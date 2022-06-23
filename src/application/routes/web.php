@@ -21,6 +21,15 @@ Route::get('/signup', 'Authenticate@signUp');
 Route::post('/signup', 'Authenticate@signUpAction');
 Route::get('/resetpassword', 'Authenticate@resetPassword');
 Route::post('/resetpassword', 'Authenticate@resetPasswordAction');
+Route::get('/stripeResponse', function (Request $request) {
+    echo 'Stripe Response: <pre>';
+    print_r($request);
+});
+
+Route::get('/canceledStripeResponse', function (Request $request) {
+    echo 'Canceled  Stripe Response: <pre>';
+    print_r($request);
+});
 
 //LOGOUT
 Route::any('logout', function () {
