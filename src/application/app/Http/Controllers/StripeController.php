@@ -27,7 +27,13 @@ class StripeController extends Controller
         //, compact('page', 'payload')
         //  return view('stripe/stripe');
     }
-
+    public function success(Request $request)
+    {
+        \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
+        $session = \Stripe\Checkout\Session::retrieve($request->session_id, []);
+        echo json_encode($session);
+        //  return view('stripe/stripe',[$session]);
+    }
     public function createSession(Request $request)
     {
         \Stripe\Stripe::setApiKey(env('STRP_SECRET'));

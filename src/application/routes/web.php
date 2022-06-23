@@ -23,13 +23,7 @@ Route::post('/signup', 'Authenticate@signUpAction');
 Route::get('/resetpassword', 'Authenticate@resetPassword');
 Route::post('/resetpassword', 'Authenticate@resetPasswordAction');
 
-Route::get('/stripeResponse', function (Request $request) {
-    echo json_encode($request->all());
-    // echo 'Stripe Response: <pre>';
-    // print_r($request);
-    // echo '<br>session:' . $request->session;
-    // echo '<br>session:' . $request->type;
-});
+Route::get('/canceledStripeResponse', 'StripeController@success');
 Route::get('/createStripesession', 'StripeController@createSession');
 
 Route::get('/canceledStripeResponse', function (Request $request) {
