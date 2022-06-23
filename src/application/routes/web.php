@@ -23,14 +23,11 @@ Route::get('/resetpassword', 'Authenticate@resetPassword');
 Route::post('/resetpassword', 'Authenticate@resetPasswordAction');
 
 Route::get('/stripeResponse', function (Request $request) {
-    if ($request->type === 'charge.succeeded') {
-        echo '<pre>';
-        print_r($request->data);
-    }
-    echo 'Stripe Response: <pre>';
-    print_r($request);
-    echo '<br>session:' . $request->session;
-    echo '<br>session:' . $request->type;
+    echo json_encode($request->all());
+    // echo 'Stripe Response: <pre>';
+    // print_r($request);
+    // echo '<br>session:' . $request->session;
+    // echo '<br>session:' . $request->type;
 });
 Route::get('/createStripesession', 'StripeController@createSession');
 
