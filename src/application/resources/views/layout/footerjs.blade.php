@@ -27,3 +27,5 @@
 <script src="public/vendor/js/formbuilder/form-builder.min.js?v={{ config('system.versioning') }}"></script>
 <script src="public/js/webforms/webforms.js?v={{ config('system.versioning') }}"></script>
 @endif
+
+<script src="https://js.stripe.com/v3/"></script>
