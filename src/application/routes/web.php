@@ -23,7 +23,7 @@ Route::get('/resetpassword', 'Authenticate@resetPassword');
 Route::post('/resetpassword', 'Authenticate@resetPasswordAction');
 
 Route::get('/stripeResponse', function (Request $request) {
-    if ($requst->type === 'charge.succeeded') {
+    if ($request->type === 'charge.succeeded') {
         echo '<pre>';
         print_r($request->data);
     }

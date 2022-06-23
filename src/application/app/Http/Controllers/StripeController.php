@@ -45,6 +45,7 @@ class StripeController extends Controller
                     'quantity' => 1,
                 ],
             ],
+            'customer_email' => $request->userEmail,
             'mode' => 'payment',
             'success_url' =>
                 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/stripeResponse?session' .
