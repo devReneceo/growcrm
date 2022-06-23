@@ -61,6 +61,6 @@ class StripeController extends Controller
             'session_id' => $session->id,
         ]);
         $session['publickey'] = env('STRP_PUBLIC');
-        echo json_encode([$session, 'sessionid' => $session->id]);
+        echo json_encode($session);
     }
 }
