@@ -14,10 +14,10 @@ use App\Repositories\LeadRepository;
 use App\Repositories\ProjectRepository;
 use App\Repositories\StatsRepository;
 use App\Repositories\TaskRepository;
-
-class Home extends Controller {
-
-    private $page = array();
+use Stripe;
+class Home extends Controller
+{
+    private $page = [];
 
     protected $statsrepo;
     protected $eventsrepo;
@@ -34,7 +34,6 @@ class Home extends Controller {
         TaskRepository $taskrepo,
         LeadRepository $leadrepo
     ) {
-
         //parent
         parent::__construct();
 
@@ -48,19 +47,17 @@ class Home extends Controller {
         //authenticated
         $this->middleware('auth');
 
-        $this->middleware('homeMiddlewareIndex')->only([
-            'index',
-        ]);
+        $this->middleware('homeMiddlewareIndex')->only(['index']);
     }
 
     /**
      * Display the home page
      * @return \Illuminate\Http\Response
      */
-    public function index() {
-
-       // dd(config('modules'));
-//crumbs, page data & stats
+    public function index()
+    {
+        // dd(config('modules'));
+        //crumbs, page data & stats
         $page = $this->pageSettings();
 
         $payload = [];
@@ -83,9 +80,35 @@ class Home extends Controller {
         if (auth()->user()->type == 'client') {
             //get payload
             $payload = $this->clientDashboard();
-
         }
+        if (auth()->user()->level == 'free') {
+            // This is your test secret API key.
+            \Stripe\Stripe::setApiKey(
+                'sk_test_qSpqBwiICGbKf3K7ykb9dilv00qUpFMQo1'
+            );
 
+            $session = \Stripe\Checkout\Session::create([
+                'line_items' => [
+                    [
+                        'price_data' => [
+                            'currency' => 'usd',
+                            'product_data' => [
+                                'name' => 'Hit 60 Premium Access',
+                            ],
+                            'unit_amount' => 500,
+                        ],
+                        'quantity' => 1,
+                    ],
+                ],
+                'mode' => 'payment',
+                'success_url' =>
+                    'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/stripeResponse',
+                'cancel_url' =>
+                    'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/canceledStripeResponse',
+            ]);
+            $payload['sessionId'] = $session->id;
+            $payload['publickey'] = env('STRP_PUBLIC');
+        }
         //show login page
         return view('pages/home/home', compact('page', 'payload'));
     }
@@ -94,8 +117,8 @@ class Home extends Controller {
      * display team dashboard
      * @return \Illuminate\Http\Response
      */
-    public function teamDashboard() {
-
+    public function teamDashboard()
+    {
         //payload
         $payload = [];
 
@@ -133,19 +156,20 @@ class Home extends Controller {
         request()->merge([
             'filter_assigned' => [auth()->id()],
         ]);
-        $payload['my_projects'] = $this->projectrepo->search('', ['limit' => 30]);
+        $payload['my_projects'] = $this->projectrepo->search('', [
+            'limit' => 30,
+        ]);
 
         //return payload
         return $payload;
-
     }
 
     /**
      * display client dashboard
      * @return \Illuminate\Http\Response
      */
-    public function clientDashboard() {
-
+    public function clientDashboard()
+    {
         //payload
         $payload = [];
 
@@ -185,19 +209,20 @@ class Home extends Controller {
         request()->merge([
             'filter_project_clientid' => auth()->user()->clientid,
         ]);
-        $payload['my_projects'] = $this->projectrepo->search('', ['limit' => 30]);
+        $payload['my_projects'] = $this->projectrepo->search('', [
+            'limit' => 30,
+        ]);
 
         //return payload
         return $payload;
-
     }
 
     /**
      * display admin User
      * @return \Illuminate\Http\Response
      */
-    public function adminDashboard() {
-
+    public function adminDashboard()
+    {
         //payload
         $payload = [];
 
@@ -209,8 +234,12 @@ class Home extends Controller {
             ]),
             'this_month' => $this->statsrepo->sumCountPayments([
                 'type' => 'sum',
-                'start_date' => \Carbon\Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => \Carbon\Carbon::now()->lastOfMonth()->format('Y-m-d'),
+                'start_date' => \Carbon\Carbon::now()
+                    ->startOfMonth()
+                    ->format('Y-m-d'),
+                'end_date' => \Carbon\Carbon::now()
+                    ->lastOfMonth()
+                    ->format('Y-m-d'),
             ]),
         ];
 
@@ -242,8 +271,7 @@ class Home extends Controller {
                 'status' => 'not_started',
             ]),
             'in_progress' => $this->statsrepo->countProjects([
-                'status' =>
-                'in_progress',
+                'status' => 'in_progress',
             ]),
             'on_hold' => $this->statsrepo->countProjects([
                 'status' => 'on_hold',
@@ -283,19 +311,24 @@ class Home extends Controller {
         $data = $this->widgetLeads('alltime');
         $payload['leads_stats'] = json_encode($data['stats']);
         $payload['leads_key_colors'] = json_encode($data['leads_key_colors']);
-        $payload['leads_chart_center_title'] = $data['leads_chart_center_title'];
+        $payload['leads_chart_center_title'] =
+            $data['leads_chart_center_title'];
 
         //filter payments-today
-        $payload['filter_payment_today'] = \Carbon\Carbon::now()->format('Y-m-d');
+        $payload['filter_payment_today'] = \Carbon\Carbon::now()->format(
+            'Y-m-d'
+        );
 
         //filter payments - this month
-        $payload['filter_payment_month_start'] = \Carbon\Carbon::now()->startOfMonth()->format('Y-m-d');
-        $payload['filter_payment_month_end'] = \Carbon\Carbon::now()->lastOfMonth()->format('Y-m-d');
-
+        $payload['filter_payment_month_start'] = \Carbon\Carbon::now()
+            ->startOfMonth()
+            ->format('Y-m-d');
+        $payload['filter_payment_month_end'] = \Carbon\Carbon::now()
+            ->lastOfMonth()
+            ->format('Y-m-d');
 
         //return payload
         return $payload;
-
     }
 
     /**
@@ -304,8 +337,8 @@ class Home extends Controller {
      * @param string $filter [alltime|...]  //add as we go
      * @return \Illuminate\Http\Response
      */
-    public function widgetLeads($filter) {
-
+    public function widgetLeads($filter)
+    {
         $payload['stats'] = [];
         $payload['leads_key_colors'] = [];
         $payload['leads_chart_center_title'] = __('lang.leads');
@@ -314,33 +347,26 @@ class Home extends Controller {
 
         //do this for each lead category
         foreach (config('home.lead_statuses') as $status) {
-
             //count all leads
             if ($filter = 'alltime') {
-                $count = $this->statsrepo->countLeads(
-                    [
-                        'status' => $status['id'],
-                    ]);
+                $count = $this->statsrepo->countLeads([
+                    'status' => $status['id'],
+                ]);
             }
 
             //add to array
-            $payload['stats'][] = [
-                $status['title'], $count,
-            ];
+            $payload['stats'][] = [$status['title'], $count];
 
             //add to counter
             $counter += $count;
 
             $payload['leads_key_colors'][] = $status['colorcode'];
-
         }
 
         // no lead in system - display something (No Leads - 100%) in chart
         if ($counter == 0) {
-            $payload['stats'][] = [
-                'No Leads', 1,
-            ];
-            $payload['leads_key_colors'][] = "#eff4f5";
+            $payload['stats'][] = ['No Leads', 1];
+            $payload['leads_key_colors'][] = '#eff4f5';
             $payload['leads_chart_center_title'] = __('lang.no_leads');
         }
 
@@ -352,12 +378,10 @@ class Home extends Controller {
      * @param array $data any other data (optional)
      * @return array
      */
-    private function pageSettings($section = '', $data = []) {
-
+    private function pageSettings($section = '', $data = [])
+    {
         $page = [
-            'crumbs' => [
-                __('lang.home'),
-            ],
+            'crumbs' => [__('lang.home')],
             'crumbs_special_class' => 'main-pages-crumbs',
             'page' => 'home',
             'meta_title' => __('lang.home'),
@@ -368,5 +392,4 @@ class Home extends Controller {
 
         return $page;
     }
-
 }

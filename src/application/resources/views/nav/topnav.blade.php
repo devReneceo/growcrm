@@ -63,14 +63,21 @@
                 @if(auth()->user()->level == 'free')
                 <li class="nav-item">
                     <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
-                        href="javascript:void(0);" data-url="{{ url('events/topnav?eventtracking_status=unread') }}"
-                        data-loading-target="sidepanel-notifications-body" data-target="sidepanel-notifications"
-                        data-progress-bar='hidden' aria-expanded="false">
-                        <i class="sl-icon-trophy"></i>
-                       
-                      Updgrate
+                        href="#"
+                        id="PremiumPayment">
+                        <i class="sl-icon-trophy"></i> Updgrate $5 dll                   
                     </a>
-                </li>
+                </li>        
+                <script>
+                $(document).on('click','#PremiumPayment', ()=> {
+                    const publickKey = "{{$payload['publickey'] ?? '' }}";
+                    console.log(publickKey);
+                    const stripe = Stripe(publickKey);                            
+                    stripe.redirectToCheckout({
+                        sessionId: "{{ $payload['sessionId'] ?? '' }}"
+                    });
+                });
+                </script>
                  @endif
 
                  @if(auth()->user()->level == 'premium')
