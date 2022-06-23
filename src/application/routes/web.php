@@ -1,4 +1,5 @@
 <?php
+use Illuminate\Http\Request;
 if (App::environment('production')) {
     URL::forceScheme('https');
 }
