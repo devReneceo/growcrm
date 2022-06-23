@@ -88,6 +88,7 @@
                             console.error(error);
                         }
                 });
+            });
                 </script>
                  @endif
 
