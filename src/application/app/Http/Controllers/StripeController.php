@@ -48,7 +48,7 @@ class StripeController extends Controller
             'customer_email' => $request->userEmail,
             'mode' => 'payment',
             'success_url' =>
-                'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/stripeResponse',
+                'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/stripeResponse?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app',
         ]);
         //$session->id
