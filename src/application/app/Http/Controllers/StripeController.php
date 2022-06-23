@@ -48,7 +48,7 @@ class StripeController extends Controller
             'mode' => 'payment',
             'success_url' =>
                 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/stripeResponse?session' .
-                $session->id,
+                $request->userId,
             'cancel_url' => 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app',
         ]);
         //$session->id
