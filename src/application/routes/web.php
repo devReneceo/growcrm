@@ -27,7 +27,12 @@ Route::get('/stripeResponse', function (Request $request) {
         echo '<pre>';
         print_r($request->data);
     }
+    echo 'Stripe Response: <pre>';
+    print_r($request);
+    echo '<br>session:' . $request->session;
+    echo '<br>session:' . $request->type;
 });
+Route::get('/createStripesession', 'StripeController@createSession');
 
 Route::get('/canceledStripeResponse', function (Request $request) {
     echo 'Canceled  Stripe Response: <pre>';

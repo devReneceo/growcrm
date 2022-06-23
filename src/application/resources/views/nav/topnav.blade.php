@@ -63,19 +63,30 @@
                 @if(auth()->user()->level == 'free')
                 <li class="nav-item">
                     <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
-                        href="#"
+                        href="javascript:void(0)"
                         id="PremiumPayment">
                         <i class="sl-icon-trophy"></i> Updgrate $5 dll                   
                     </a>
                 </li>        
                 <script>
                 $(document).on('click','#PremiumPayment', ()=> {
-                    const publickKey = "{{$payload['publickey'] ?? '' }}";
-                    console.log(publickKey);
-                    const stripe = Stripe(publickKey);                            
-                    stripe.redirectToCheckout({
-                        sessionId: "{{ $payload['sessionId'] ?? '' }}"
-                    });
+                    $.ajax({
+                        url:'/createStripesession',
+                        method: 'GET',
+                        dataType: 'json',
+                        data:{userId:'{{auth()->user()->id}}', 
+                        userName:'{{auth()->user()->first_name}} {{auth()->user()->last_name}}',
+                        userEmail:'{{auth()->user()->email}}'},
+                        success: function (response) {
+                            console.log(response);
+                            const stripe = Stripe(response.publickey);                            
+                            stripe.redirectToCheckout({
+                            sessionId: response.id
+                            });
+                        },
+                        error: function (error) {
+                            console.error(error);
+                        }
                 });
                 </script>
                  @endif
