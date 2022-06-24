@@ -10,6 +10,8 @@
 namespace App\Http\Controllers;
 use Stripe;
 use App\Models\PaymentSession;
+use App\Models\User;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 class StripeController extends Controller
 {
@@ -27,13 +29,64 @@ class StripeController extends Controller
         //, compact('page', 'payload')
         //  return view('stripe/stripe');
     }
+
     public function stripeSuccess(Request $request)
     {
         \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
         $session = \Stripe\Checkout\Session::retrieve($request->session_id, []);
-        echo json_encode($session);
-        //  return view('stripe/stripe',[$session]);
+        $payment = PaymentSession::where('session_id', $request->session_id)
+            ->select('id', 'session_creatorid')
+            ->get();
+        foreach ($payment as $p) {
+            try {
+                PaymentSession::where('id', $p->id)->update([
+                    'session_status' => $session->status,
+                    'payment_status' => $session->payment_status,
+                    'session_updated' => date(' yyyy-mm-dd'),
+                ]);
+
+                $paymentcount = Payment::where(
+                    'payment_invoiceid',
+                    $session->payment_intent
+                )
+                    ->where('payment_clientid', $p->session_creatorid)
+                    ->get()
+                    ->count();
+
+                if (!$paymentcount) {
+                    Payment::create([
+                        'payment_creatorid' => $p->session_creatorid,
+                        'payment_invoiceid' => $session->payment_intent,
+                        'payment_clientid' => $p->session_creatorid,
+                        'payment_amount' => $session->amount_total / 100,
+                        'payment_invoiceid' => $session->payment_intent,
+                        'payment_gateway' => 'stripe',
+                    ]);
+                }
+
+                if ($session->payment_status == 'paid') {
+                    User::where('id', $p->session_creatorid)->update([
+                        'level' => 'premium',
+                    ]);
+                    return view('stripe/stripe', ['status' => 'success']);
+                }
+                return view('stripe/stripe', [
+                    'status' => 'error',
+                    'message' => 'status not paid',
+                    'session' => $session,
+                ]);
+            } catch (\Throwable $th) {
+                return view('stripe/stripe', [
+                    'status' => 'error',
+                    'message' => 'Error processing your Premium access.',
+                    'payment_status' => $session->payment_status,
+                    'payment_id' => $session->payment_intent,
+                    'th' => $th,
+                ]);
+            }
+        }
     }
+
     public function createSession(Request $request)
     {
         \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
@@ -66,6 +119,7 @@ class StripeController extends Controller
             'session_subscription' => $session->subscription,
             'session_id' => $session->id,
         ]);
+
         $session['publickey'] = env('STRP_PUBLIC');
         echo json_encode($session);
     }
