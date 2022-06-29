@@ -1,4 +1,5 @@
 @extends('layout.wrapper') @section('content')
+@if( auth()->user()->associate == 1)
 <!-- main content -->
 <div class="container-fluid">
 
@@ -47,5 +48,17 @@
     data-target="#cardModal" data-url="{{ url('/leads/'.request()->route('lead').'?ref=list') }}"
     data-loading-target="main-top-nav-bar"></a>
 @endif
+@endif
+@if( auth()->user()->associate != 1)
+<div class="row" style="margin-top:5%">
+        <div class="col-md-12">
+            <div class="alert alert-warning text-center">
+                    <h1> This section is for Associates only.</h1>
+            </div>
+        </div>
 
+</div>
+
+@endif
+@endsection
 @endsection

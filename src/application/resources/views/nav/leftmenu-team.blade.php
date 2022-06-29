@@ -97,7 +97,7 @@
                 <!--tasks-->
 
                 <!--leads[done]-->
-                @if(config('visibility.modules.leads'))
+                @if(config('visibility.modules.leads') && auth()->user()->associate == 1)
                 <li class="sidenav-menu-item {{ $page['mainmenu_leads'] ?? '' }} menu-tooltip menu-with-tooltip"
                     title="{{ cleanLang(__('lang.leads')) }}">
                     <a class="waves-effect waves-dark" href="/leads" aria-expanded="false" target="_self">

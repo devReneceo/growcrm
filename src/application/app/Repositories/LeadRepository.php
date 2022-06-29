@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Log;
 
-class LeadRepository {
-
+class LeadRepository
+{
     /**
      * The leads repository instance.
      */
@@ -26,7 +26,8 @@ class LeadRepository {
     /**
      * Inject dependecies
      */
-    public function __construct(Lead $leads) {
+    public function __construct(Lead $leads)
+    {
         $this->leads = $leads;
     }
 
@@ -35,19 +36,30 @@ class LeadRepository {
      * @param int $id optional for getting a single, specified record
      * @return object lead collection
      */
-    public function search($id = '') {
-
+    public function search($id = '')
+    {
         $leads = $this->leads->newQuery();
 
         //joins
-        $leads->leftJoin('categories', 'categories.category_id', '=', 'leads.lead_categoryid');
+        $leads->leftJoin(
+            'categories',
+            'categories.category_id',
+            '=',
+            'leads.lead_categoryid'
+        );
         $leads->leftJoin('users', 'users.id', '=', 'leads.lead_creatorid');
-        $leads->leftJoin('leads_status', 'leads_status.leadstatus_id', '=', 'leads.lead_status');
+        $leads->leftJoin(
+            'leads_status',
+            'leads_status.leadstatus_id',
+            '=',
+            'leads.lead_status'
+        );
 
         //join: users reminders - do not do this for cronjobs
         if (auth()->check()) {
             $leads->leftJoin('reminders', function ($join) {
-                $join->on('reminders.reminderresource_id', '=', 'leads.lead_id')
+                $join
+                    ->on('reminders.reminderresource_id', '=', 'leads.lead_id')
                     ->where('reminders.reminderresource_type', '=', 'lead')
                     ->where('reminders.reminder_userid', '=', auth()->id());
             });
@@ -57,26 +69,34 @@ class LeadRepository {
         $leads->selectRaw('*');
 
         //count unread notifications
-        $leads->selectRaw('(SELECT COUNT(*)
+        $leads->selectRaw(
+            '(SELECT COUNT(*)
                                       FROM events_tracking
                                       LEFT JOIN events ON events.event_id = events_tracking.eventtracking_eventid
-                                      WHERE eventtracking_userid = ' . auth()->id() . '
+                                      WHERE eventtracking_userid = ' .
+                auth()->id() .
+                '
                                       AND events_tracking.eventtracking_status = "unread"
                                       AND events.event_parent_type = "lead"
                                       AND events.eventresource_id = leads.lead_id
                                       AND events.event_item = "comment")
-                                      AS count_unread_comments');
+                                      AS count_unread_comments'
+        );
 
         //count unread notifications
-        $leads->selectRaw('(SELECT COUNT(*)
+        $leads->selectRaw(
+            '(SELECT COUNT(*)
                                       FROM events_tracking
                                       LEFT JOIN events ON events.event_id = events_tracking.eventtracking_eventid
-                                      WHERE eventtracking_userid = ' . auth()->id() . '
+                                      WHERE eventtracking_userid = ' .
+                auth()->id() .
+                '
                                       AND events_tracking.eventtracking_status = "unread"
                                       AND events.event_parent_type = "lead"
                                       AND events.event_parent_id = leads.lead_id
                                       AND events.event_item = "attachment")
-                                      AS count_unread_attachments');
+                                      AS count_unread_attachments'
+        );
         //converted by details
         $leads->selectRaw('(SELECT first_name
                                       FROM users
@@ -89,11 +109,14 @@ class LeadRepository {
                                       AS converted_by_last_name');
 
         //default where
-        $leads->whereRaw("1 = 1");
+        $leads->whereRaw('1 = 1');
 
         //filter for active or archived (default to active) - do not use this when a lead id has been specified
         if (!is_numeric($id)) {
-            if (!request()->filled('filter_show_archived_leads') && !request()->filled('filter_lead_state')) {
+            if (
+                !request()->filled('filter_show_archived_leads') &&
+                !request()->filled('filter_lead_state')
+            ) {
                 $leads->where('lead_active_state', 'active');
             }
         }
@@ -110,57 +133,97 @@ class LeadRepository {
         $leads->where('lead_visibility', 'visible');
 
         //filter archived leads
-        if (request()->filled('filter_lead_state') && (request('filter_lead_state') == 'active' || request('filter_lead_state') == 'archived')) {
+        if (
+            request()->filled('filter_lead_state') &&
+            (request('filter_lead_state') == 'active' ||
+                request('filter_lead_state') == 'archived')
+        ) {
             $leads->where('lead_active_state', request('filter_lead_state'));
         }
 
         //filter: added date (start)
         if (request()->filled('filter_lead_created_start')) {
-            $leads->whereDate('lead_created', '>=', request('filter_lead_created_start'));
+            $leads->whereDate(
+                'lead_created',
+                '>=',
+                request('filter_lead_created_start')
+            );
         }
 
         //filter: added date (end)
         if (request()->filled('filter_lead_created_end')) {
-            $leads->whereDate('lead_created', '<=', request('filter_lead_created_end'));
+            $leads->whereDate(
+                'lead_created',
+                '<=',
+                request('filter_lead_created_end')
+            );
         }
 
         //filter: last contacted date (start)
         if (request()->filled('filter_lead_last_contacted_start')) {
-            $leads->whereDate('lead_last_contacted', '>=', request('filter_lead_last_contacted_start'));
+            $leads->whereDate(
+                'lead_last_contacted',
+                '>=',
+                request('filter_lead_last_contacted_start')
+            );
         }
 
         //filter: last contacted date (end)
         if (request()->filled('filter_lead_last_contacted_end')) {
-            $leads->whereDate('lead_last_contacted', '<=', request('filter_lead_last_contacted_end'));
+            $leads->whereDate(
+                'lead_last_contacted',
+                '<=',
+                request('filter_lead_last_contacted_end')
+            );
         }
 
         //filter: value (min)
         if (request()->filled('filter_lead_value_min')) {
-            $leads->where('lead_value', '>=', request('filter_lead_value_min'));
+            $leads->where(
+                'leads.lead_value',
+                '>=',
+                request('filter_lead_value_min')
+            );
         }
 
         //filter: value (max)
         if (request()->filled('filter_lead_value_max')) {
-            $leads->where('lead_value', '<=', request('filter_lead_value_max'));
+            $leads->where(
+                'leads.lead_value',
+                '<=',
+                request('filter_lead_value_max')
+            );
         }
 
         //filter: board
         if (request()->filled('filter_single_lead_status')) {
-            $leads->where('lead_status', request('filter_single_lead_status'));
+            $leads->where(
+                'leads.lead_status',
+                request('filter_single_lead_status')
+            );
         }
 
         //filter status
         if (is_numeric(request('filter_lead_status'))) {
-            $leads->where('lead_status', request('filter_lead_status'));
+            $leads->where('leads.lead_status', request('filter_lead_status'));
         }
-        if (is_array(request('filter_lead_status')) && !empty(array_filter(request('filter_lead_status')))) {
-            $leads->whereIn('lead_status', request('filter_lead_status'));
+        if (
+            is_array(request('filter_lead_status')) &&
+            !empty(array_filter(request('filter_lead_status')))
+        ) {
+            $leads->whereIn('leads.lead_status', request('filter_lead_status'));
         }
 
         //filter assigned
-        if (is_array(request('filter_assigned')) && !empty(array_filter(request('filter_assigned')))) {
+        if (
+            is_array(request('filter_assigned')) &&
+            !empty(array_filter(request('filter_assigned')))
+        ) {
             $leads->whereHas('assigned', function ($query) {
-                $query->whereIn('leadsassigned_userid', request('filter_assigned'));
+                $query->whereIn(
+                    'leadsassigned_userid',
+                    request('filter_assigned')
+                );
             });
         }
 
@@ -173,7 +236,10 @@ class LeadRepository {
         }
 
         //filter: tags
-        if (is_array(request('filter_tags')) && !empty(array_filter(request('filter_tags')))) {
+        if (
+            is_array(request('filter_tags')) &&
+            !empty(array_filter(request('filter_tags')))
+        ) {
             $leads->whereHas('tags', function ($query) {
                 $query->whereIn('tag_title', request('filter_tags'));
             });
@@ -183,43 +249,101 @@ class LeadRepository {
         if (request()->filled('search_query') || request()->filled('query')) {
             $leads->where(function ($query) {
                 $query->Where('lead_id', '=', request('search_query'));
-                $query->orWhere('lead_created', 'LIKE', '%' . date('Y-m-d', strtotime(request('search_query'))) . '%');
-                $query->orWhere('lead_last_contacted', 'LIKE', '%' . date('Y-m-d', strtotime(request('search_query'))) . '%');
-                $query->orWhereRaw("YEAR(lead_created) = ?", [request('search_query')]); //example binding
-                $query->orWhereRaw("YEAR(lead_last_contacted) = ?", [request('search_query')]); //example binding
-                $query->orWhere('lead_title', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('lead_firstname', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('lead_lastname', 'LIKE', '%' . request('search_query') . '%');
+                $query->orWhere(
+                    'lead_created',
+                    'LIKE',
+                    '%' .
+                        date('Y-m-d', strtotime(request('search_query'))) .
+                        '%'
+                );
+                $query->orWhere(
+                    'lead_last_contacted',
+                    'LIKE',
+                    '%' .
+                        date('Y-m-d', strtotime(request('search_query'))) .
+                        '%'
+                );
+                $query->orWhereRaw('YEAR(lead_created) = ?', [
+                    request('search_query'),
+                ]); //example binding
+                $query->orWhereRaw('YEAR(lead_last_contacted) = ?', [
+                    request('search_query'),
+                ]); //example binding
+                $query->orWhere(
+                    'lead_title',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'lead_firstname',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'lead_lastname',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
                 $query->orWhere('lead_email', '=', request('search_query'));
-                $query->orWhere('lead_company_name', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('lead_street', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('lead_city', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('lead_state', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('lead_zip', 'LIKE', '%' . request('search_query') . '%');
+                $query->orWhere(
+                    'lead_company_name',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'lead_street',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'lead_city',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'lead_state',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'lead_zip',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
                 $query->orWhere('lead_country', '=', request('search_query'));
                 $query->orWhere('lead_source', '=', request('search_query'));
-                $query->orWhere('leadstatus_title', '=', request('search_query'));
+                $query->orWhere(
+                    'leadstatus_title',
+                    '=',
+                    request('search_query')
+                );
                 if (is_numeric(request('search_query'))) {
                     $query->orWhere('lead_value', '=', request('search_query'));
                 }
                 $query->orWhereHas('tags', function ($q) {
-                    $q->where('tag_title', 'LIKE', '%' . request('search_query') . '%');
+                    $q->where(
+                        'tag_title',
+                        'LIKE',
+                        '%' . request('search_query') . '%'
+                    );
                 });
             });
-
         }
 
         //sorting
-        if (in_array(request('sortorder'), array('desc', 'asc')) && request('orderby') != '') {
+        if (
+            in_array(request('sortorder'), ['desc', 'asc']) &&
+            request('orderby') != ''
+        ) {
             //direct column name
             if (Schema::hasColumn('leads', request('orderby'))) {
                 $leads->orderBy(request('orderby'), request('sortorder'));
             }
             //others
             switch (request('orderby')) {
-            case 'status':
-                $leads->orderBy('leadstatus_title', request('sortorder'));
-                break;
+                case 'status':
+                    $leads->orderBy('leadstatus_title', request('sortorder'));
+                    break;
             }
         } else {
             //default sorting
@@ -231,23 +355,15 @@ class LeadRepository {
         }
 
         //eager load
-        $leads->with([
-            'tags',
-            'leadstatus',
-            'attachments',
-            'assigned',
-        ]);
+        $leads->with(['tags', 'leadstatus', 'attachments', 'assigned']);
 
         //count relationships
-        $leads->withCount([
-            'tags',
-            'comments',
-            'attachments',
-            'checklists',
-        ]);
+        $leads->withCount(['tags', 'comments', 'attachments', 'checklists']);
 
         // Get the results and return them.
-        return $leads->paginate(config('system.settings_system_pagination_limits'));
+        return $leads->paginate(
+            config('system.settings_system_pagination_limits')
+        );
     }
 
     /**
@@ -255,16 +371,24 @@ class LeadRepository {
      * @param array $position new record position
      * @return mixed object|bool
      */
-    public function create($position = '') {
-
+    public function create($position = '')
+    {
         //validate
         if (!is_numeric($position)) {
-            Log::error("validation error - invalid params", ['process' => '[LeadRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'project_id' => 1]);
+            Log::error('validation error - invalid params', [
+                'process' => '[LeadRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+                'project_id' => 1,
+            ]);
             return false;
         }
 
         //save new user
-        $lead = new $this->leads;
+        $lead = new $this->leads();
 
         //data
         $lead->lead_creatorid = auth()->id();
@@ -304,11 +428,19 @@ class LeadRepository {
      * @param int $id record id
      * @return mixed int|bool
      */
-    public function update($id) {
-
+    public function update($id)
+    {
         //get the record
-        if (!$lead = $this->leads->find($id)) {
-            Log::error("record could not be found", ['process' => '[LeadAssignedRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'lead_id' => $id ?? '']);
+        if (!($lead = $this->leads->find($id))) {
+            Log::error('record could not be found', [
+                'process' => '[LeadAssignedRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+                'lead_id' => $id ?? '',
+            ]);
             return false;
         }
 
@@ -352,8 +484,11 @@ class LeadRepository {
      * @param string $searchterm
      * @return array
      */
-    public function autocompleteFeed($status = '', $limit = '', $searchterm = '') {
-
+    public function autocompleteFeed(
+        $status = '',
+        $limit = '',
+        $searchterm = ''
+    ) {
         //validation
         if ($searchterm == '') {
             return [];
@@ -361,7 +496,7 @@ class LeadRepository {
 
         //start
         $query = $this->leads->newQuery();
-        $query->selectRaw("lead_title AS value, lead_id AS id");
+        $query->selectRaw('lead_title AS value, lead_id AS id');
 
         //[filter] lead status
         if ($status != '') {
@@ -389,17 +524,19 @@ class LeadRepository {
     /**
      * update model wit custom fields data (where enabled)
      */
-    public function applyCustomFields($id = '') {
-
+    public function applyCustomFields($id = '')
+    {
         //custom fields
-        $fields = \App\Models\CustomField::Where('customfields_type', 'leads')->get();
+        $fields = \App\Models\CustomField::Where(
+            'customfields_type',
+            'leads'
+        )->get();
         foreach ($fields as $field) {
             if ($field->customfields_standard_form_status == 'enabled') {
                 $field_name = $field->customfields_name;
-                \App\Models\Lead::where('lead_id', $id)
-                    ->update([
-                        "$field_name" => request($field_name),
-                    ]);
+                \App\Models\Lead::where('lead_id', $id)->update([
+                    "$field_name" => request($field_name),
+                ]);
             }
         }
     }
@@ -408,8 +545,8 @@ class LeadRepository {
      * clone a leads
      * @return bool
      */
-    public function cloneLead($lead = '', $data = []) {
-
+    public function cloneLead($lead = '', $data = [])
+    {
         //we are copying
         $new_lead = $lead->replicate();
         $new_lead->lead_created = now();
@@ -432,12 +569,20 @@ class LeadRepository {
 
         //copy check list
         if ($data['copy_checklist']) {
-            if ($checklists = \App\Models\Checklist::Where('checklistresource_type', 'lead')->Where('checklistresource_id', $lead->lead_id)->get()) {
+            if (
+                $checklists = \App\Models\Checklist::Where(
+                    'checklistresource_type',
+                    'lead'
+                )
+                    ->Where('checklistresource_id', $lead->lead_id)
+                    ->get()
+            ) {
                 foreach ($checklists as $checklist) {
                     $new_checklist = $checklist->replicate();
                     $new_checklist->checklist_created = now();
                     $new_checklist->checklist_creatorid = auth()->id();
-                    $new_checklist->checklist_clientid = $new_lead->lead_clientid;
+                    $new_checklist->checklist_clientid =
+                        $new_lead->lead_clientid;
                     $new_checklist->checklist_status = 'pending';
                     $new_checklist->checklistresource_type = 'lead';
                     $new_checklist->checklistresource_id = $new_lead->lead_id;
@@ -448,14 +593,24 @@ class LeadRepository {
 
         //copy attachements
         if ($data['copy_files']) {
-            if ($attachments = \App\Models\Attachment::Where('attachmentresource_type', 'lead')->Where('attachmentresource_id', $lead->lead_id)->get()) {
+            if (
+                $attachments = \App\Models\Attachment::Where(
+                    'attachmentresource_type',
+                    'lead'
+                )
+                    ->Where('attachmentresource_id', $lead->lead_id)
+                    ->get()
+            ) {
                 foreach ($attachments as $attachment) {
                     //unique key
                     $unique_key = Str::random(50);
                     //directory
                     $directory = Str::random(40);
                     //paths
-                    $source = BASE_DIR . "/storage/files/" . $attachment->attachment_directory;
+                    $source =
+                        BASE_DIR .
+                        '/storage/files/' .
+                        $attachment->attachment_directory;
                     $destination = BASE_DIR . "/storage/files/$directory";
                     //validate
                     if (is_dir($source)) {
@@ -464,11 +619,13 @@ class LeadRepository {
                         $new_attachment->attachment_creatorid = auth()->id();
                         $new_attachment->attachment_created = now();
                         $new_attachment->attachmentresource_id = $lead->lead_id;
-                        $new_attachment->attachment_clientid = $new_lead->lead_clientid;
+                        $new_attachment->attachment_clientid =
+                            $new_lead->lead_clientid;
                         $new_attachment->attachment_uniqiueid = $directory;
                         $new_attachment->attachment_directory = $directory;
                         $new_attachment->attachmentresource_type = 'lead';
-                        $new_attachment->attachmentresource_id = $new_lead->lead_id;
+                        $new_attachment->attachmentresource_id =
+                            $new_lead->lead_id;
                         $new_attachment->save();
                         //copy folder
                         File::copyDirectory($source, $destination);
@@ -480,5 +637,4 @@ class LeadRepository {
         //all done
         return $new_lead;
     }
-
 }
