@@ -85,7 +85,7 @@
                 @if(config('visibility.modules.tasks') && auth()->user()->associate == 1)
                 
                 <li class="sidenav-menu-item {{ $page['mainmenu_tasks'] ?? '' }} menu-tooltip menu-with-tooltip"
-                    title="{{ cleanLang(__('lang.tasks')) }}">
+                    title="{{ cleanLang(__('lang.leads')) }}">
                     <a class="waves-effect waves-dark" href="/tasks" aria-expanded="false" target="_self">
                         <i class="ti-menu-alt"></i>
                         <span class="hide-menu">{{ cleanLang(__('lang.tasks')) }}

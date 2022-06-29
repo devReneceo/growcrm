@@ -72,8 +72,8 @@ use Image;
 use Intervention\Image\Exception\NotReadableException;
 use Validator;
 
-class Tasks extends Controller {
-
+class Tasks extends Controller
+{
     /**
      * The task repository instance.
      */
@@ -158,7 +158,6 @@ class Tasks extends Controller {
         TaskStatusRepository $statusrepo,
         ProjectPermissions $projectpermission
     ) {
-
         //core controller instantation
         parent::__construct();
 
@@ -210,10 +209,7 @@ class Tasks extends Controller {
             'stopRecurring',
         ]);
 
-        $this->middleware('tasksMiddlewareCreate')->only([
-            'create',
-            'store',
-        ]);
+        $this->middleware('tasksMiddlewareCreate')->only(['create', 'store']);
 
         $this->middleware('tasksMiddlewareShow')->only([
             'show',
@@ -268,13 +264,9 @@ class Tasks extends Controller {
             'toggleChecklistStatus',
         ]);
 
-        $this->middleware('tasksMiddlewareDestroy')->only([
-            'destroy',
-        ]);
+        $this->middleware('tasksMiddlewareDestroy')->only(['destroy']);
 
-        $this->middleware('tasksMiddlewareAssign')->only([
-            'updateAssigned',
-        ]);
+        $this->middleware('tasksMiddlewareAssign')->only(['updateAssigned']);
 
         $this->middleware('tasksMiddlewareCloning')->only([
             'cloneTask',
@@ -286,13 +278,14 @@ class Tasks extends Controller {
      * Display a listing of tasks
      * @return \Illuminate\Http\Response
      */
-    public function index() {
-
+    public function index()
+    {
         if (auth()->user()->pref_view_tasks_layout == 'list') {
             $payload = $this->indexList();
             return new IndexListResponse($payload);
         } else {
             $payload = $this->indexKanban();
+
             return new IndexKanbanResponse($payload);
         }
     }
@@ -301,8 +294,8 @@ class Tasks extends Controller {
      * Display a listing of tasks
      * @return \Illuminate\Http\Response
      */
-    public function indexList() {
-
+    public function indexList()
+    {
         //defaults
         $milestones = [];
 
@@ -340,8 +333,14 @@ class Tasks extends Controller {
         $statuses = \App\Models\TaskStatus::all();
 
         //get all milestones if viewing from project page (for use in filter panel)
-        if (request()->filled('taskresource_id') && request('taskresource_type') == 'project') {
-            $milestones = \App\Models\Milestone::Where('milestone_projectid', request('taskresource_id'))->get();
+        if (
+            request()->filled('taskresource_id') &&
+            request('taskresource_type') == 'project'
+        ) {
+            $milestones = \App\Models\Milestone::Where(
+                'milestone_projectid',
+                request('taskresource_id')
+            )->get();
         }
 
         //reponse payload
@@ -362,8 +361,8 @@ class Tasks extends Controller {
      * Display a listing of tasks
      * @return \Illuminate\Http\Response
      */
-    public function indexKanban() {
-
+    public function indexKanban()
+    {
         //defaults
         $milestones = [];
 
@@ -387,14 +386,28 @@ class Tasks extends Controller {
         $statuses = \App\Models\TaskStatus::all();
 
         //get all milestones if viewing from project page (for use in filter panel)
-        if (request()->filled('taskresource_id') && request('taskresource_type') == 'project') {
-            $milestones = \App\Models\Milestone::Where('milestone_projectid', request('taskresource_id'))->get();
+        if (
+            request()->filled('taskresource_id') &&
+            request('taskresource_type') == 'project'
+        ) {
+            $milestones = \App\Models\Milestone::Where(
+                'milestone_projectid',
+                request('taskresource_id')
+            )->get();
         }
 
         //check if the user has participation rights on the task
         if (auth()->user()->is_client) {
-            if (request()->filled('taskresource_id') && request('taskresource_type') == 'project') {
-                if ($this->projectpermission->check('tasks-participate', request('taskresource_id'))) {
+            if (
+                request()->filled('taskresource_id') &&
+                request('taskresource_type') == 'project'
+            ) {
+                if (
+                    $this->projectpermission->check(
+                        'tasks-participate',
+                        request('taskresource_id')
+                    )
+                ) {
                     config(['visibility.tasks_participate' => true]);
                 }
             }
@@ -418,9 +431,12 @@ class Tasks extends Controller {
      * process/group tasks into boards
      * @return object
      */
-    private function taskBoards() {
-
-        $statuses = \App\Models\TaskStatus::orderBy('taskstatus_position', 'asc')->get();
+    private function taskBoards()
+    {
+        $statuses = \App\Models\TaskStatus::orderBy(
+            'taskstatus_position',
+            'asc'
+        )->get();
 
         foreach ($statuses as $status) {
             request()->merge([
@@ -454,7 +470,12 @@ class Tasks extends Controller {
             //initial loadmore button
             if ($tasks->currentPage() < $tasks->lastPage()) {
                 $boards[$status->taskstatus_id]['load_more'] = '';
-                $boards[$status->taskstatus_id]['load_more_url'] = loadMoreButtonUrl($tasks->currentPage() + 1, $status->taskstatus_id);
+                $boards[$status->taskstatus_id][
+                    'load_more_url'
+                ] = loadMoreButtonUrl(
+                    $tasks->currentPage() + 1,
+                    $status->taskstatus_id
+                );
             } else {
                 $boards[$status->taskstatus_id]['load_more'] = 'hidden';
                 $boards[$status->taskstatus_id]['load_more_url'] = '';
@@ -463,8 +484,8 @@ class Tasks extends Controller {
             $boards[$status->taskstatus_id]['name'] = $status->taskstatus_title;
             $boards[$status->taskstatus_id]['id'] = $status->taskstatus_id;
             $boards[$status->taskstatus_id]['tasks'] = $tasks;
-            $boards[$status->taskstatus_id]['color'] = $status->taskstatus_color;
-
+            $boards[$status->taskstatus_id]['color'] =
+                $status->taskstatus_color;
         }
 
         return $boards;
@@ -475,8 +496,8 @@ class Tasks extends Controller {
      * @param object CategoryRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function create(CategoryRepository $categoryrepo) {
-
+    public function create(CategoryRepository $categoryrepo)
+    {
         //default
         $milestones = [];
 
@@ -486,11 +507,20 @@ class Tasks extends Controller {
         //get tags
         $tags = $this->tagrepo->getByType('task');
 
-        $statuses = \App\Models\TaskStatus::orderBy('taskstatus_position', 'asc')->get();
+        $statuses = \App\Models\TaskStatus::orderBy(
+            'taskstatus_position',
+            'asc'
+        )->get();
 
         //milestones
-        if (request()->filled('taskresource_id') && request('taskresource_type') == 'project') {
-            $milestones = \App\Models\Milestone::Where('milestone_projectid', request('taskresource_id'))->get();
+        if (
+            request()->filled('taskresource_id') &&
+            request('taskresource_type') == 'project'
+        ) {
+            $milestones = \App\Models\Milestone::Where(
+                'milestone_projectid',
+                request('taskresource_id')
+            )->get();
         }
 
         //get customfields
@@ -523,8 +553,8 @@ class Tasks extends Controller {
      * @param model client model - only when showing the edit modal form
      * @return collection
      */
-    public function getCustomFields($obj = '') {
-
+    public function getCustomFields($obj = '')
+    {
         //set typs
         request()->merge([
             'customfields_type' => 'tasks',
@@ -552,8 +582,10 @@ class Tasks extends Controller {
      * @param object TaskAssignedRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function store(TaskStoreUpdate $request, TaskAssignedRepository $assignedrepo) {
-
+    public function store(
+        TaskStoreUpdate $request,
+        TaskAssignedRepository $assignedrepo
+    ) {
         //defaults
         $assigned_users = [];
 
@@ -572,35 +604,61 @@ class Tasks extends Controller {
 
         //validate milestone id
         if (request()->filled('task_milestoneid')) {
-            if (!\App\Models\Milestone::where('milestone_id', request('task_milestoneid'))
-                ->where('milestone_projectid', request('task_projectid'))->first()) {
+            if (
+                !\App\Models\Milestone::where(
+                    'milestone_id',
+                    request('task_milestoneid')
+                )
+                    ->where('milestone_projectid', request('task_projectid'))
+                    ->first()
+            ) {
                 abort(409, __('lang.item_not_found'));
             }
         }
 
         //no milestone provided - get default milestone
         if (!request()->filled('task_milestoneid')) {
-            if ($milestone = \App\Models\Milestone::where('milestone_type', 'uncategorised')
-                ->where('milestone_projectid', request('task_projectid'))->first()) {
+            if (
+                $milestone = \App\Models\Milestone::where(
+                    'milestone_type',
+                    'uncategorised'
+                )
+                    ->where('milestone_projectid', request('task_projectid'))
+                    ->first()
+            ) {
                 request()->merge([
                     'task_milestoneid' => $milestone->milestone_id,
                 ]);
             } else {
                 abort(409, __('lang.milestone_not_found'));
-                Log::critical("add task - default milestone could not be found", ['process' => '[tasks]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'project_id' => request('task_projectid')]);
+                Log::critical(
+                    'add task - default milestone could not be found',
+                    [
+                        'process' => '[tasks]',
+                        config('app.debug_ref'),
+                        'function' => __FUNCTION__,
+                        'file' => basename(__FILE__),
+                        'line' => __LINE__,
+                        'path' => __FILE__,
+                        'project_id' => request('task_projectid'),
+                    ]
+                );
             }
         }
 
         //get the last row (order by position - desc)
-        if ($last = $this->taskmodel::orderBy('task_position', 'desc')->first()) {
-            $position = $last->task_position + config('settings.db_position_increment');
+        if (
+            $last = $this->taskmodel::orderBy('task_position', 'desc')->first()
+        ) {
+            $position =
+                $last->task_position + config('settings.db_position_increment');
         } else {
             //default position increment
             $position = config('settings.db_position_increment');
         }
 
         //create new record
-        if (!$task_id = $this->taskrepo->create($position)) {
+        if (!($task_id = $this->taskrepo->create($position))) {
             abort(409);
         }
 
@@ -640,14 +698,19 @@ class Tasks extends Controller {
          * record assignment events and send emails
          * ----------------------------------------------*/
         foreach ($assigned_users as $assigned_user_id) {
-            if ($assigned_user = \App\Models\User::Where('id', $assigned_user_id)->first()) {
-
+            if (
+                $assigned_user = \App\Models\User::Where(
+                    'id',
+                    $assigned_user_id
+                )->first()
+            ) {
                 $data = [
                     'event_creatorid' => auth()->id(),
                     'event_item' => 'assigned',
                     'event_item_id' => '',
                     'event_item_lang' => 'event_assigned_user_to_a_task',
-                    'event_item_lang_alt' => 'event_assigned_user_to_a_task_alt',
+                    'event_item_lang_alt' =>
+                        'event_assigned_user_to_a_task_alt',
                     'event_item_content' => __('lang.assigned'),
                     'event_item_content2' => $assigned_user_id,
                     'event_item_content3' => $assigned_user->first_name,
@@ -659,13 +722,18 @@ class Tasks extends Controller {
                     'event_clientid' => $task->task_clientid,
                     'eventresource_type' => 'project',
                     'eventresource_id' => $task->task_projectid,
-                    'event_notification_category' => 'notifications_new_assignement',
+                    'event_notification_category' =>
+                        'notifications_new_assignement',
                 ];
                 //record event
                 if ($event_id = $this->eventrepo->create($data)) {
                     //record notification (skip the user creating this event)
                     if ($assigned_user_id != auth()->id()) {
-                        $emailusers = $this->trackingrepo->recordEvent($data, [$assigned_user_id], $event_id);
+                        $emailusers = $this->trackingrepo->recordEvent(
+                            $data,
+                            [$assigned_user_id],
+                            $event_id
+                        );
                     }
                 }
 
@@ -673,8 +741,15 @@ class Tasks extends Controller {
                  * send email [assignment]
                  * ----------------------------------------------*/
                 if ($assigned_user_id != auth()->id()) {
-                    if ($assigned_user->notifications_new_assignement == 'yes_email') {
-                        $mail = new \App\Mail\TaskAssignment($assigned_user, $data, $task);
+                    if (
+                        $assigned_user->notifications_new_assignement ==
+                        'yes_email'
+                    ) {
+                        $mail = new \App\Mail\TaskAssignment(
+                            $assigned_user,
+                            $data,
+                            $task
+                        );
                         $mail->build();
                     }
                 }
@@ -713,22 +788,33 @@ class Tasks extends Controller {
 
         //process reponse
         return new StoreResponse($payload);
-
     }
 
     /**
      * Returns false when all is ok
      * @return \Illuminate\Http\Response
      */
-    public function customFieldValidationFailed() {
-
+    public function customFieldValidationFailed()
+    {
         //custom field validation
-        $fields = \App\Models\CustomField::Where('customfields_type', 'tasks')->get();
+        $fields = \App\Models\CustomField::Where(
+            'customfields_type',
+            'tasks'
+        )->get();
         $errors = '';
         foreach ($fields as $field) {
-            if ($field->customfields_status == 'enabled' && $field->customfields_standard_form_status == 'enabled' && $field->customfields_required == 'yes') {
+            if (
+                $field->customfields_status == 'enabled' &&
+                $field->customfields_standard_form_status == 'enabled' &&
+                $field->customfields_required == 'yes'
+            ) {
                 if (request($field->customfields_name) == '') {
-                    $errors .= '<li>' . $field->customfields_title . ' - ' . __('lang.is_required') . '</li>';
+                    $errors .=
+                        '<li>' .
+                        $field->customfields_title .
+                        ' - ' .
+                        __('lang.is_required') .
+                        '</li>';
                 }
             }
         }
@@ -755,8 +841,9 @@ class Tasks extends Controller {
         ProjectAssignedRepository $projectassignedrepo,
         CommentRepository $commentrepo,
         AttachmentRepository $attachmentrepo,
-        ChecklistRepository $checklistrepo, $id) {
-
+        ChecklistRepository $checklistrepo,
+        $id
+    ) {
         //get the task
         $tasks = $this->taskrepo->search($id);
 
@@ -779,7 +866,9 @@ class Tasks extends Controller {
         $assigned = $assignedrepo->getAssigned($id);
 
         //get team members who are assigned to this tasks project
-        $project_assigned = $projectassignedrepo->getAssigned($task->task_projectid);
+        $project_assigned = $projectassignedrepo->getAssigned(
+            $task->task_projectid
+        );
 
         //comments
         request()->merge([
@@ -812,7 +901,10 @@ class Tasks extends Controller {
         }
 
         //milestone
-        $milestones = \App\Models\Milestone::Where('milestone_projectid', $task->task_projectid)->get();
+        $milestones = \App\Models\Milestone::Where(
+            'milestone_projectid',
+            $task->task_projectid
+        )->get();
 
         //page settings
         $page = $this->pageSettings('task', $task);
@@ -824,9 +916,15 @@ class Tasks extends Controller {
             ->update(['eventtracking_status' => 'read']);
 
         //get users reminders
-        if ($reminder = \App\Models\Reminder::Where('reminderresource_type', 'task')
-            ->Where('reminderresource_id', $id)
-            ->Where('reminder_userid', auth()->id())->first()) {
+        if (
+            $reminder = \App\Models\Reminder::Where(
+                'reminderresource_type',
+                'task'
+            )
+                ->Where('reminderresource_id', $id)
+                ->Where('reminder_userid', auth()->id())
+                ->first()
+        ) {
             $has_reminder = true;
         } else {
             $reminder = [];
@@ -868,8 +966,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function update($id) {
-
+    public function update($id)
+    {
         //reponse payload
         $payload = [
             'stats' => $this->statsWidget(),
@@ -884,15 +982,13 @@ class Tasks extends Controller {
      * @param object DestroyRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function destroy(DestroyRepository $destroyrepo) {
-
+    public function destroy(DestroyRepository $destroyrepo)
+    {
         //delete each record in the array
-        $allrows = array();
+        $allrows = [];
         foreach (request('ids') as $id => $value) {
-
             //only checked items
             if ($value == 'on') {
-
                 //delete the task and associated items
                 $destroyrepo->destroyTask($id);
 
@@ -916,8 +1012,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function timerStart($id) {
-
+    public function timerStart($id)
+    {
         $action = 'start';
 
         //get the task and apply permissions
@@ -955,8 +1051,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function timerStartTopnav() {
-
+    public function timerStartTopnav()
+    {
         //get the task and apply permissions
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -969,7 +1065,6 @@ class Tasks extends Controller {
 
         //create a new timer for this user
         if (!$this->timerrepo->createTimer($task)) {
-
         }
 
         $payload = [];
@@ -983,8 +1078,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function timerStop($id) {
-
+    public function timerStop($id)
+    {
         //get the task and apply permissions
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -1008,8 +1103,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function timerStopUser() {
-
+    public function timerStopUser()
+    {
         //stop running timer for this user
         $this->timerrepo->stopRunningTimers([
             'timer_creatorid' => auth()->id(),
@@ -1024,8 +1119,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function timerStopAll($id) {
-
+    public function timerStopAll($id)
+    {
         //get the task and apply permissions
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -1048,7 +1143,8 @@ class Tasks extends Controller {
      * send each task for processing
      * @return null
      */
-    private function processTasks($tasks = '') {
+    private function processTasks($tasks = '')
+    {
         //sanity - make sure this is a valid tasks object
         if ($tasks instanceof \Illuminate\Pagination\LengthAwarePaginator) {
             foreach ($tasks as $task) {
@@ -1064,11 +1160,10 @@ class Tasks extends Controller {
      * @param object task instance of the task model object
      * @return object
      */
-    private function processTask($task = '') {
-
+    private function processTask($task = '')
+    {
         //sanity - make sure this is a valid task object
         if ($task instanceof \App\Models\Task) {
-
             //default values
             $task->assigned_to_me = false;
             $task->running_timers = false;
@@ -1085,9 +1180,10 @@ class Tasks extends Controller {
                 }
             }
 
-            $task->has_attachments = ($task->attachments_count > 0) ? true : false;
-            $task->has_comments = ($task->comments_count > 0) ? true : false;
-            $task->has_checklist = ($task->checklists_count > 0) ? true : false;
+            $task->has_attachments =
+                $task->attachments_count > 0 ? true : false;
+            $task->has_comments = $task->comments_count > 0 ? true : false;
+            $task->has_checklist = $task->checklists_count > 0 ? true : false;
 
             //check if there are any running timers
             foreach ($task->timers as $timer) {
@@ -1101,7 +1197,10 @@ class Tasks extends Controller {
             }
 
             //get users current/refreshed time for the task (if applcable)
-            $task->my_time = $this->timerrepo->sumTimers($task->task_id, auth()->id());
+            $task->my_time = $this->timerrepo->sumTimers(
+                $task->task_id,
+                auth()->id()
+            );
 
             //custom fields
             $task->fields = $this->getCustomFields($task);
@@ -1113,8 +1212,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return object
      */
-    public function updateDescription($id) {
-
+    public function updateDescription($id)
+    {
         $task = $this->taskmodel::find($id);
         $task->task_description = request('task_description');
         $task->save();
@@ -1137,8 +1236,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return null
      */
-    public function updateStartDate($id) {
-
+    public function updateStartDate($id)
+    {
         //get the task
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -1154,8 +1253,13 @@ class Tasks extends Controller {
                 'date',
                 function ($attribute, $value, $fail) {
                     if (request('task_date_due') != '') {
-                        if (strtotime($value) > strtotime(request('task_date_due'))) {
-                            return $fail(__('lang.start_date_must_be_before_due_date'));
+                        if (
+                            strtotime($value) >
+                            strtotime(request('task_date_due'))
+                        ) {
+                            return $fail(
+                                __('lang.start_date_must_be_before_due_date')
+                            );
                         }
                     }
                 },
@@ -1199,8 +1303,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return null
      */
-    public function updateDueDate($id) {
-
+    public function updateDueDate($id)
+    {
         //get the task
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -1216,8 +1320,13 @@ class Tasks extends Controller {
                 'date',
                 function ($attribute, $value, $fail) {
                     if (request('task_date_due') != '') {
-                        if (strtotime($value) < strtotime(request('task_date_start'))) {
-                            return $fail(__('lang.due_date_must_be_after_start_date'));
+                        if (
+                            strtotime($value) <
+                            strtotime(request('task_date_start'))
+                        ) {
+                            return $fail(
+                                __('lang.due_date_must_be_after_start_date')
+                            );
                         }
                     }
                 },
@@ -1262,8 +1371,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function updateStatus(ProjectPermissions $projectpermissions, $id) {
-
+    public function updateStatus(ProjectPermissions $projectpermissions, $id)
+    {
         //get the task
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -1276,7 +1385,12 @@ class Tasks extends Controller {
             'task_status' => [
                 'required',
                 function ($attribute, $value, $fail) {
-                    if (\App\Models\TaskStatus::Where('taskstatus_id', $value)->doesntExist()) {
+                    if (
+                        \App\Models\TaskStatus::Where(
+                            'taskstatus_id',
+                            $value
+                        )->doesntExist()
+                    ) {
                         return $fail(__('lang.invalid_status'));
                     }
                 },
@@ -1299,7 +1413,14 @@ class Tasks extends Controller {
 
         //we are moving task to a new board - update its position to top of the new list
         if ($old_status != request('task_status')) {
-            if ($first_task = \App\Models\Task::Where('task_status', request('task_status'))->orderBy('task_position', 'ASC')->first()) {
+            if (
+                $first_task = \App\Models\Task::Where(
+                    'task_status',
+                    request('task_status')
+                )
+                    ->orderBy('task_position', 'ASC')
+                    ->first()
+            ) {
                 $task->task_position = $first_task->task_position / 2;
             }
         }
@@ -1342,7 +1463,11 @@ class Tasks extends Controller {
                 //get users
                 $users = $projectpermissions->check('users', $task);
                 //record notification
-                $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+                $emailusers = $this->trackingrepo->recordEvent(
+                    $data,
+                    $users,
+                    $event_id
+                );
             }
         }
         /** ----------------------------------------------
@@ -1353,7 +1478,11 @@ class Tasks extends Controller {
             //send to users
             if ($users = \App\Models\User::WhereIn('id', $emailusers)->get()) {
                 foreach ($users as $user) {
-                    $mail = new \App\Mail\TaskStatusChanged($user, $data, $task);
+                    $mail = new \App\Mail\TaskStatusChanged(
+                        $user,
+                        $data,
+                        $task
+                    );
                     $mail->build();
                 }
             }
@@ -1377,8 +1506,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function updatePriority($id) {
-
+    public function updatePriority($id)
+    {
         //get the task
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -1388,7 +1517,12 @@ class Tasks extends Controller {
             'task_priority' => [
                 'required',
                 function ($attribute, $value, $fail) {
-                    if (!array_key_exists($value, config('settings.task_priority'))) {
+                    if (
+                        !array_key_exists(
+                            $value,
+                            config('settings.task_priority')
+                        )
+                    ) {
                         return $fail(__('lang.invalid_priority'));
                     }
                 },
@@ -1423,7 +1557,6 @@ class Tasks extends Controller {
             'tasks' => $tasks,
             'stats' => $this->statsWidget(),
             'display_priority' => runtimeLang(request('task_priority')),
-
         ];
 
         //process reponse
@@ -1435,8 +1568,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function updateVisibility($id) {
-
+    public function updateVisibility($id)
+    {
         //get the task
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -1478,7 +1611,10 @@ class Tasks extends Controller {
             'type' => 'update-vivibility',
             'tasks' => $tasks,
             'stats' => $this->statsWidget(),
-            'display_text' => ($task->task_client_visibility == 'yes') ? __('lang.visible') : __('lang.hidden'),
+            'display_text' =>
+                $task->task_client_visibility == 'yes'
+                    ? __('lang.visible')
+                    : __('lang.hidden'),
         ];
 
         //process reponse
@@ -1490,14 +1626,21 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function updateMilestone($id) {
-
+    public function updateMilestone($id)
+    {
         //get the task
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
 
         //validate
-        if (!\App\Models\Milestone::Where('milestone_id', request('task_milestoneid'))->where('milestone_projectid', $task->task_projectid)->exists()) {
+        if (
+            !\App\Models\Milestone::Where(
+                'milestone_id',
+                request('task_milestoneid')
+            )
+                ->where('milestone_projectid', $task->task_projectid)
+                ->exists()
+        ) {
             //show error and reset values
             $payload = [
                 'reset_target' => '',
@@ -1535,8 +1678,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function updateTitle($id) {
-
+    public function updateTitle($id)
+    {
         //get the task
         $task = $this->taskmodel::find($id);
 
@@ -1545,7 +1688,10 @@ class Tasks extends Controller {
             //[type options] error|success
             $jsondata['notification'] = [
                 'type' => 'error',
-                'value' => __('lang.title') . ' ' . __('lang.must_not_contain_any_html'),
+                'value' =>
+                    __('lang.title') .
+                    ' ' .
+                    __('lang.must_not_contain_any_html'),
             ];
 
             //update back the title
@@ -1559,7 +1705,6 @@ class Tasks extends Controller {
 
         //validation
         if (!request()->filled('task_title')) {
-
             //[type options] error|success
             $jsondata['notification'] = [
                 'type' => 'error',
@@ -1574,7 +1719,6 @@ class Tasks extends Controller {
             ];
 
             return response()->json($jsondata);
-
         } else {
             $task->task_title = request('task_title');
             $task->save();
@@ -1612,8 +1756,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function updateAssigned(TaskAssignedRepository $assignedrepo, $id) {
-
+    public function updateAssigned(TaskAssignedRepository $assignedrepo, $id)
+    {
         //fix - remove own tasks filter- so that a user with "assign tasks" role can use this method
         $data = [
             'apply_filters' => false,
@@ -1627,7 +1771,10 @@ class Tasks extends Controller {
         $currently_assigned = $task->assigned->pluck('id')->toArray();
 
         //milestone
-        $milestones = \App\Models\Milestone::Where('milestone_projectid', $task->task_projectid)->get();
+        $milestones = \App\Models\Milestone::Where(
+            'milestone_projectid',
+            $task->task_projectid
+        )->get();
 
         //validation - data type
         if (request()->filled('assigned') && !is_array(request('assigned'))) {
@@ -1647,7 +1794,11 @@ class Tasks extends Controller {
             foreach (request('assigned') as $user_id => $value) {
                 if ($value == 'on') {
                     //validate user exists
-                    if (\App\Models\User::Where('id', $user_id)->Where('type', 'team')->doesntExist()) {
+                    if (
+                        \App\Models\User::Where('id', $user_id)
+                            ->Where('type', 'team')
+                            ->doesntExist()
+                    ) {
                         return new UpdateResponse([
                             'type' => 'update-assigned',
                             'tasks' => $tasks,
@@ -1658,7 +1809,6 @@ class Tasks extends Controller {
                             'message' => __('lang.assiged_user_not_found'),
                         ]);
                     }
-
                 }
             }
         }
@@ -1683,7 +1833,8 @@ class Tasks extends Controller {
         foreach ($currently_assigned as $current_user) {
             if (!in_array($current_user, $newly_signed_users)) {
                 //reset existing account owner
-                \App\Models\Timer::where('timer_taskid', $id)->where('timer_creatorid', $current_user)
+                \App\Models\Timer::where('timer_taskid', $id)
+                    ->where('timer_creatorid', $current_user)
                     ->update(['timer_status' => 'stopped']);
             }
         }
@@ -1692,14 +1843,19 @@ class Tasks extends Controller {
          * record assignment events and send emails
          * ----------------------------------------------*/
         foreach ($newly_signed_users as $assigned_user_id) {
-            if ($assigned_user = \App\Models\User::Where('id', $assigned_user_id)->first()) {
-
+            if (
+                $assigned_user = \App\Models\User::Where(
+                    'id',
+                    $assigned_user_id
+                )->first()
+            ) {
                 $data = [
                     'event_creatorid' => auth()->id(),
                     'event_item' => 'assigned',
                     'event_item_id' => '',
                     'event_item_lang' => 'event_assigned_user_to_a_task',
-                    'event_item_lang_alt' => 'event_assigned_user_to_a_task_alt',
+                    'event_item_lang_alt' =>
+                        'event_assigned_user_to_a_task_alt',
                     'event_item_content' => __('lang.assigned'),
                     'event_item_content2' => $assigned_user_id,
                     'event_item_content3' => $assigned_user->first_name,
@@ -1711,13 +1867,18 @@ class Tasks extends Controller {
                     'event_clientid' => $task->task_clientid,
                     'eventresource_type' => 'project',
                     'eventresource_id' => $task->task_projectid,
-                    'event_notification_category' => 'notifications_new_assignement',
+                    'event_notification_category' =>
+                        'notifications_new_assignement',
                 ];
                 //record event
                 if ($event_id = $this->eventrepo->create($data)) {
                     //record notification (skip the user creating this event)
                     if ($assigned_user_id != auth()->id()) {
-                        $emailusers = $this->trackingrepo->recordEvent($data, [$assigned_user_id], $event_id);
+                        $emailusers = $this->trackingrepo->recordEvent(
+                            $data,
+                            [$assigned_user_id],
+                            $event_id
+                        );
                     }
                 }
 
@@ -1725,8 +1886,15 @@ class Tasks extends Controller {
                  * send email [assignment]
                  * ----------------------------------------------*/
                 if ($assigned_user_id != auth()->id()) {
-                    if ($assigned_user->notifications_new_assignement == 'yes_email') {
-                        $mail = new \App\Mail\TaskAssignment($assigned_user, $data, $task);
+                    if (
+                        $assigned_user->notifications_new_assignement ==
+                        'yes_email'
+                    ) {
+                        $mail = new \App\Mail\TaskAssignment(
+                            $assigned_user,
+                            $data,
+                            $task
+                        );
                         $mail->build();
                     }
                 }
@@ -1762,8 +1930,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function updateTags($id) {
-
+    public function updateTags($id)
+    {
         //delete & update tags
         $this->tagrepo->delete('task', $id);
         $this->tagrepo->add('task', $id);
@@ -1794,13 +1962,11 @@ class Tasks extends Controller {
      * @param object CommentRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function storeComment(CommentRepository $commentrepo, $id) {
-
+    public function storeComment(CommentRepository $commentrepo, $id)
+    {
         //validate
         $validator = Validator::make(request()->all(), [
-            'comment_text' => [
-                'required',
-            ],
+            'comment_text' => ['required'],
         ]);
 
         //validation errors
@@ -1855,7 +2021,11 @@ class Tasks extends Controller {
             //get users
             $users = $this->taskpermissions->check('users', $task);
             //record notification
-            $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+            $emailusers = $this->trackingrepo->recordEvent(
+                $data,
+                $users,
+                $event_id
+            );
         }
 
         /** ----------------------------------------------
@@ -1888,13 +2058,11 @@ class Tasks extends Controller {
      * @param object ChecklistRepository instance of the repository
      * @return object
      */
-    public function StoreChecklist(ChecklistRepository $checklistrepo, $id) {
-
+    public function StoreChecklist(ChecklistRepository $checklistrepo, $id)
+    {
         //validate
         $validator = Validator::make(request()->all(), [
-            'checklist_text' => [
-                'required',
-            ],
+            'checklist_text' => ['required'],
         ]);
 
         //validation errors
@@ -1918,10 +2086,15 @@ class Tasks extends Controller {
         ]);
 
         //get next position
-        if ($last = \App\Models\Checklist::Where('checklistresource_type', 'task')
-            ->Where('checklistresource_id', $id)
-            ->orderBy('checklist_position', 'desc')
-            ->first()) {
+        if (
+            $last = \App\Models\Checklist::Where(
+                'checklistresource_type',
+                'task'
+            )
+                ->Where('checklistresource_id', $id)
+                ->orderBy('checklist_position', 'desc')
+                ->first()
+        ) {
             $position = $last->checklist_position + 1;
         } else {
             //default position
@@ -1955,13 +2128,11 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function UpdateChecklist(ChecklistRepository $checklistrepo, $id) {
-
+    public function UpdateChecklist(ChecklistRepository $checklistrepo, $id)
+    {
         //validate
         $validator = Validator::make(request()->all(), [
-            'checklist_text' => [
-                'required',
-            ],
+            'checklist_text' => ['required'],
         ]);
 
         //validation errors
@@ -2000,10 +2171,13 @@ class Tasks extends Controller {
      * change task status using the checkbox
      * @return \Illuminate\Http\Response
      */
-    public function toggleStatus() {
-
+    public function toggleStatus()
+    {
         //validate the task exists
-        $task = \App\Models\Task::Where('task_id', request()->route('task'))->first();
+        $task = \App\Models\Task::Where(
+            'task_id',
+            request()->route('task')
+        )->first();
 
         //update the task
         if (request('toggle_task_status') == 'on') {
@@ -2020,7 +2194,6 @@ class Tasks extends Controller {
             $this->timerrepo->stopRunningTimers([
                 'task_id' => request()->route('task'),
             ]);
-
         }
 
         //get refreshed task
@@ -2035,7 +2208,6 @@ class Tasks extends Controller {
 
         //record event (task completed)
         if ($task->task_status == 2) {
-
             /** ----------------------------------------------
              * record event [comment]
              * see database table to details of each key
@@ -2062,7 +2234,11 @@ class Tasks extends Controller {
                 //get users
                 $users = $this->taskpermissions->check('users', $task);
                 //record notification
-                $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+                $emailusers = $this->trackingrepo->recordEvent(
+                    $data,
+                    $users,
+                    $event_id
+                );
             }
 
             /** ----------------------------------------------
@@ -2072,14 +2248,19 @@ class Tasks extends Controller {
                 //additional data
                 $data = [];
                 //send to users
-                if ($users = \App\Models\User::WhereIn('id', $emailusers)->get()) {
+                if (
+                    $users = \App\Models\User::WhereIn('id', $emailusers)->get()
+                ) {
                     foreach ($users as $user) {
-                        $mail = new \App\Mail\TaskStatusChanged($user, $data, $task);
+                        $mail = new \App\Mail\TaskStatusChanged(
+                            $user,
+                            $data,
+                            $task
+                        );
                         $mail->build();
                     }
                 }
             }
-
         }
 
         //reponse payload
@@ -2099,14 +2280,16 @@ class Tasks extends Controller {
      * @param object AttachmentRepository instance of the repository
      * @param int $id task id
      */
-    public function attachFiles(Request $request, AttachmentRepository $attachmentrepo, $id) {
-
+    public function attachFiles(
+        Request $request,
+        AttachmentRepository $attachmentrepo,
+        $id
+    ) {
         //validate the task exists
         $task = $this->taskmodel::find($id);
 
         //save the file in its own folder in the temp folder
         if ($file = $request->file('file')) {
-
             //defaults
             $file_type = 'file';
 
@@ -2137,14 +2320,27 @@ class Tasks extends Controller {
             if (is_array(@getimagesize($file_path))) {
                 $file_type = 'image';
                 try {
-                    $img = Image::make($file_path)->resize(null, 90, function ($constraint) {
+                    $img = Image::make($file_path)->resize(null, 90, function (
+                        $constraint
+                    ) {
                         $constraint->aspectRatio();
                         $constraint->upsize();
                     });
                     $img->save($thumb_path);
                 } catch (NotReadableException $e) {
                     $message = $e->getMessage();
-                    Log::error("[Image Library] failed to create uplaoded image thumbnail. Image type is not supported on this server", ['process' => '[permissions]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'error_message' => $message]);
+                    Log::error(
+                        '[Image Library] failed to create uplaoded image thumbnail. Image type is not supported on this server',
+                        [
+                            'process' => '[permissions]',
+                            config('app.debug_ref'),
+                            'function' => __FUNCTION__,
+                            'file' => basename(__FILE__),
+                            'line' => __LINE__,
+                            'path' => __FILE__,
+                            'error_message' => $message,
+                        ]
+                    );
                     abort(409, __('lang.image_file_type_not_supported'));
                 }
             }
@@ -2200,7 +2396,11 @@ class Tasks extends Controller {
                 //get users
                 $users = $this->taskpermissions->check('users', $task);
                 //record notification
-                $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+                $emailusers = $this->trackingrepo->recordEvent(
+                    $data,
+                    $users,
+                    $event_id
+                );
             }
 
             /** ----------------------------------------------
@@ -2209,9 +2409,15 @@ class Tasks extends Controller {
             if (isset($emailusers) && is_array($emailusers)) {
                 $data = $attachment->toArray();
                 //send to users
-                if ($users = \App\Models\User::WhereIn('id', $emailusers)->get()) {
+                if (
+                    $users = \App\Models\User::WhereIn('id', $emailusers)->get()
+                ) {
                     foreach ($users as $user) {
-                        $mail = new \App\Mail\TaskFileUploaded($user, $data, $task);
+                        $mail = new \App\Mail\TaskFileUploaded(
+                            $user,
+                            $data,
+                            $task
+                        );
                         $mail->build();
                     }
                 }
@@ -2233,25 +2439,31 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function deleteAttachment() {
-
+    public function deleteAttachment()
+    {
         //check if file exists in the database
-        $attachment = \App\Models\Attachment::Where('attachment_uniqiueid', request()->route('uniqueid'))->first();
+        $attachment = \App\Models\Attachment::Where(
+            'attachment_uniqiueid',
+            request()->route('uniqueid')
+        )->first();
 
         //confirm thumb exists
         if ($attachment->attachment_directory != '') {
             if (Storage::exists("files/$attachment->attachment_directory")) {
-                Storage::deleteDirectory("files/$attachment->attachment_directory");
+                Storage::deleteDirectory(
+                    "files/$attachment->attachment_directory"
+                );
             }
         }
 
         $attachment->delete();
 
         //hide and remove row
-        $jsondata['dom_visibility'][] = array(
-            'selector' => '#card_attachment_' . $attachment->attachment_uniqiueid,
+        $jsondata['dom_visibility'][] = [
+            'selector' =>
+                '#card_attachment_' . $attachment->attachment_uniqiueid,
             'action' => 'slideup-slow-remove',
-        );
+        ];
 
         //response
         return response()->json($jsondata);
@@ -2262,10 +2474,13 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function downloadAttachment() {
-
+    public function downloadAttachment()
+    {
         //check if file exists in the database
-        $attachment = \App\Models\Attachment::Where('attachment_uniqiueid', request()->route('uniqueid'))->first();
+        $attachment = \App\Models\Attachment::Where(
+            'attachment_uniqiueid',
+            request()->route('uniqueid')
+        )->first();
 
         //confirm thumb exists
         if ($attachment->attachment_filename != '') {
@@ -2284,16 +2499,19 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function deleteComment(DestroyRepository $destroyrepo, Comment $comment, $id) {
-
+    public function deleteComment(
+        DestroyRepository $destroyrepo,
+        Comment $comment,
+        $id
+    ) {
         //delete comment
         $destroyrepo->destroyComment($id);
 
         //hide and remove row
-        $jsondata['dom_visibility'][] = array(
+        $jsondata['dom_visibility'][] = [
             'selector' => '#card_comment_' . $comment->comment_id,
             'action' => 'slideup-slow-remove',
-        );
+        ];
 
         //response
         return response()->json($jsondata);
@@ -2306,8 +2524,10 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function deleteChecklist(Checklist $checklist, ChecklistRepository $checklistrepo) {
-
+    public function deleteChecklist(
+        Checklist $checklist,
+        ChecklistRepository $checklistrepo
+    ) {
         //check if file exists in the database
         $checklist = $checklist::find(request()->route('checklistid'));
 
@@ -2343,8 +2563,10 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function toggleChecklistStatus(Checklist $checklist, ChecklistRepository $checklistrepo) {
-
+    public function toggleChecklistStatus(
+        Checklist $checklist,
+        ChecklistRepository $checklistrepo
+    ) {
         //check if file exists in the database
         $checklist = $checklist::find(request()->route('checklistid'));
 
@@ -2378,13 +2600,15 @@ class Tasks extends Controller {
      * @param object checklists instance of the checklists model object
      * @return object
      */
-    private function checklistProgress($checklists) {
-
+    private function checklistProgress($checklists)
+    {
         $progress['bar'] = 'w-0'; //css width %
         $progress['completed'] = '---';
 
         //sanity - make sure this is a valid tasks object
-        if ($checklists instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+        if (
+            $checklists instanceof \Illuminate\Pagination\LengthAwarePaginator
+        ) {
             $count = 0;
             $completed = 0;
             foreach ($checklists as $checklist) {
@@ -2409,31 +2633,55 @@ class Tasks extends Controller {
      * @param object $task instance of the task model object
      * @return object
      */
-    private function applyPermissions($task = '') {
-
+    private function applyPermissions($task = '')
+    {
         //sanity - make sure this is a valid task object
         if ($task instanceof \App\Models\Task) {
             //project tasks
             if ($task->task_projectid > 0) {
                 //edit permissions
-                $task->permission_edit_task = $this->taskpermissions->check('edit', $task);
+                $task->permission_edit_task = $this->taskpermissions->check(
+                    'edit',
+                    $task
+                );
                 //delete permissions
-                $task->permission_delete_task = $this->taskpermissions->check('delete', $task);
+                $task->permission_delete_task = $this->taskpermissions->check(
+                    'delete',
+                    $task
+                );
                 //delete participate
-                $task->permission_participate = $this->taskpermissions->check('participate', $task);
+                $task->permission_participate = $this->taskpermissions->check(
+                    'participate',
+                    $task
+                );
                 //super user
-                $task->permission_assign_users = $this->taskpermissions->check('assign-users', $task);
+                $task->permission_assign_users = $this->taskpermissions->check(
+                    'assign-users',
+                    $task
+                );
                 //super user
-                $task->permission_super_user = $this->taskpermissions->check('super-user', $task);
+                $task->permission_super_user = $this->taskpermissions->check(
+                    'super-user',
+                    $task
+                );
             }
             //template tasks
             if ($task->task_projectid < 0) {
                 //edit permissions
-                $task->permission_edit_task = (auth()->user()->role->role_templates_projects >= 2) ? true : false;
+                $task->permission_edit_task =
+                    auth()->user()->role->role_templates_projects >= 2
+                        ? true
+                        : false;
                 //delete permissions
-                $task->permission_delete_task = (auth()->user()->role->role_templates_projects >= 2) ? true : false;
+                $task->permission_delete_task =
+                    auth()->user()->role->role_templates_projects >= 2
+                        ? true
+                        : false;
                 //delete participate
-                $task->permission_participate = (auth()->user()->role->role_templates_projects >= 2) ? true : false;
+                $task->permission_participate =
+                    auth()->user()->role->role_templates_projects >= 2
+                        ? true
+                        : false;
                 //super user
                 $task->permission_assign_users = false;
                 //super user
@@ -2447,12 +2695,15 @@ class Tasks extends Controller {
      * @param object $comment instance of the comment model object
      * @return object
      */
-    private function applyCommentPermissions($comment = '') {
-
+    private function applyCommentPermissions($comment = '')
+    {
         //sanity - make sure this is a valid object
         if ($comment instanceof \App\Models\Comment) {
             //delete permissions
-            $comment->permission_delete_comment = $this->commentpermissions->check('delete', $comment);
+            $comment->permission_delete_comment = $this->commentpermissions->check(
+                'delete',
+                $comment
+            );
         }
     }
 
@@ -2461,12 +2712,15 @@ class Tasks extends Controller {
      * @param object $attachment instance of the attachment model object
      * @return object
      */
-    private function applyAttachmentPermissions($attachment = '') {
-
+    private function applyAttachmentPermissions($attachment = '')
+    {
         //sanity - make sure this is a valid object
         if ($attachment instanceof \App\Models\Attachment) {
             //delete permissions
-            $attachment->permission_delete_attachment = $this->attachmentpermissions->check('delete', $attachment);
+            $attachment->permission_delete_attachment = $this->attachmentpermissions->check(
+                'delete',
+                $attachment
+            );
         }
     }
 
@@ -2475,12 +2729,15 @@ class Tasks extends Controller {
      * @param object $checklist instance of the checklist model object
      * @return object
      */
-    private function applyChecklistPermissions($checklist = '') {
-
+    private function applyChecklistPermissions($checklist = '')
+    {
         //sanity - make sure this is a valid object
         if ($checklist instanceof \App\Models\Checklist) {
             //delete permissions
-            $checklist->permission_edit_delete_checklist = $this->checklistpermissions->check('edit-delete', $checklist);
+            $checklist->permission_edit_delete_checklist = $this->checklistpermissions->check(
+                'edit-delete',
+                $checklist
+            );
         }
     }
 
@@ -2488,16 +2745,21 @@ class Tasks extends Controller {
      * update a cards position (kanban drag & drop)
      * @return null
      */
-    public function updatePosition() {
-
+    public function updatePosition()
+    {
         //validation
         if (!request()->filled('status')) {
             abort(409, __('lang.error_request_could_not_be_completed'));
         }
-        if (\App\Models\TaskStatus::Where('taskstatus_id', request('status'))->doesntExist()) {
+        if (
+            \App\Models\TaskStatus::Where(
+                'taskstatus_id',
+                request('status')
+            )->doesntExist()
+        ) {
             abort(409, __('lang.error_request_could_not_be_completed'));
         }
-        if (!$task = $this->taskmodel::find(request('task_id'))) {
+        if (!($task = $this->taskmodel::find(request('task_id')))) {
             abort(409, __('lang.error_request_could_not_be_completed'));
         }
 
@@ -2509,39 +2771,63 @@ class Tasks extends Controller {
         $old_status = $task->task_status;
 
         //(scenario - 1) card is placed in between 2 other cards
-        if (is_numeric(request('previous_task_id')) && is_numeric(request('next_task_id'))) {
+        if (
+            is_numeric(request('previous_task_id')) &&
+            is_numeric(request('next_task_id'))
+        ) {
             //get previous task
-            if (!$previous_task = $this->taskmodel::find(request('previous_task_id'))) {
+            if (
+                !($previous_task = $this->taskmodel::find(
+                    request('previous_task_id')
+                ))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //get next task
-            if (!$next_task = $this->taskmodel::find(request('next_task_id'))) {
+            if (
+                !($next_task = $this->taskmodel::find(request('next_task_id')))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //calculate this tasks new position & update it
-            $new_position = ($previous_task->task_position + $next_task->task_position) / 2;
+            $new_position =
+                ($previous_task->task_position + $next_task->task_position) / 2;
             $task->task_position = $new_position;
             $task->task_status = request('status');
             $task->save();
         }
 
         //(scenario - 2) card is placed at the end of a list
-        if (is_numeric(request('previous_task_id')) && !request()->filled('next_task_id')) {
+        if (
+            is_numeric(request('previous_task_id')) &&
+            !request()->filled('next_task_id')
+        ) {
             //get previous task
-            if (!$previous_task = $this->taskmodel::find(request('previous_task_id'))) {
+            if (
+                !($previous_task = $this->taskmodel::find(
+                    request('previous_task_id')
+                ))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //calculate this tasks new position & update it
-            $new_position = $previous_task->task_position + config('settings.db_position_increment');
+            $new_position =
+                $previous_task->task_position +
+                config('settings.db_position_increment');
             $task->task_position = $new_position;
             $task->task_status = request('status');
             $task->save();
         }
 
         //(scenario - 3) card is placed at the start of a list
-        if (is_numeric(request('next_task_id')) && !request()->filled('previous_task_id')) {
+        if (
+            is_numeric(request('next_task_id')) &&
+            !request()->filled('previous_task_id')
+        ) {
             //get next task
-            if (!$next_task = $this->taskmodel::find(request('next_task_id'))) {
+            if (
+                !($next_task = $this->taskmodel::find(request('next_task_id')))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //calculate this tasks new position & update it
@@ -2552,7 +2838,10 @@ class Tasks extends Controller {
         }
 
         //(scenario - 4) card is placed on an empty board
-        if (!request()->filled('previous_task_id') && !request()->filled('next_task_id')) {
+        if (
+            !request()->filled('previous_task_id') &&
+            !request()->filled('next_task_id')
+        ) {
             //update only status
             $task->task_status = request('status');
             $task->save();
@@ -2589,7 +2878,11 @@ class Tasks extends Controller {
                 //get users
                 $users = $this->taskpermissions->check('users', $task);
                 //record notification
-                $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+                $emailusers = $this->trackingrepo->recordEvent(
+                    $data,
+                    $users,
+                    $event_id
+                );
             }
 
             /** ----------------------------------------------
@@ -2598,9 +2891,15 @@ class Tasks extends Controller {
             if (isset($emailusers) && is_array($emailusers)) {
                 $data = [];
                 //send to users
-                if ($users = \App\Models\User::WhereIn('id', $emailusers)->get()) {
+                if (
+                    $users = \App\Models\User::WhereIn('id', $emailusers)->get()
+                ) {
                     foreach ($users as $user) {
-                        $mail = new \App\Mail\TaskStatusChanged($user, $data, $task);
+                        $mail = new \App\Mail\TaskStatusChanged(
+                            $user,
+                            $data,
+                            $task
+                        );
                         $mail->build();
                     }
                 }
@@ -2615,7 +2914,6 @@ class Tasks extends Controller {
         //process reponse
         // 5 aug 2021 - the response is not working because the ajax call was not made using nextloop ajax (see app.js line 1754)
         //return new UpdatePositionResponse($payload);
-
     }
 
     /**
@@ -2624,8 +2922,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function archive($id) {
-
+    public function archive($id)
+    {
         //get task and update status
         $task = \App\Models\Task::Where('task_id', $id)->first();
         $task->task_active_state = 'archived';
@@ -2654,8 +2952,8 @@ class Tasks extends Controller {
      * @param int $id task id
      * @return \Illuminate\Http\Response
      */
-    public function activate($id) {
-
+    public function activate($id)
+    {
         //get task and update status
         $task = \App\Models\Task::Where('task_id', $id)->first();
         $task->task_active_state = 'active';
@@ -2684,8 +2982,8 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function showCustomFields($id) {
-
+    public function showCustomFields($id)
+    {
         //get tasks
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -2706,7 +3004,6 @@ class Tasks extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2715,8 +3012,8 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function editCustomFields($id) {
-
+    public function editCustomFields($id)
+    {
         //get tasks
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -2737,7 +3034,6 @@ class Tasks extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2746,8 +3042,8 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateCustomFields($id) {
-
+    public function updateCustomFields($id)
+    {
         //get tasks
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -2761,10 +3057,9 @@ class Tasks extends Controller {
 
         //update
         foreach ($fields as $field) {
-            \App\Models\Task::where('task_id', $id)
-                ->update([
-                    $field->customfields_name => $_POST[$field->customfields_name],
-                ]);
+            \App\Models\Task::where('task_id', $id)->update([
+                $field->customfields_name => $_POST[$field->customfields_name],
+            ]);
         }
 
         //refeshed data
@@ -2781,7 +3076,6 @@ class Tasks extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2790,12 +3084,15 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function showMyNotes($id) {
-
+    public function showMyNotes($id)
+    {
         //get tasks
-        if ($note = \App\Models\Note::Where('noteresource_type', 'task')
-            ->Where('noteresource_id', $id)
-            ->Where('note_creatorid', auth()->id())->first()) {
+        if (
+            $note = \App\Models\Note::Where('noteresource_type', 'task')
+                ->Where('noteresource_id', $id)
+                ->Where('note_creatorid', auth()->id())
+                ->first()
+        ) {
             $has_note = true;
         } else {
             $note = [];
@@ -2824,12 +3121,13 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function editMyNotes($id) {
-
+    public function editMyNotes($id)
+    {
         //get tasks
         $note = \App\Models\Note::Where('noteresource_type', 'task')
             ->Where('noteresource_id', $id)
-            ->Where('note_creatorid', auth()->id())->first();
+            ->Where('note_creatorid', auth()->id())
+            ->first();
 
         //refeshed data
         $tasks = $this->taskrepo->search($id);
@@ -2852,12 +3150,13 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function deleteMyNotes($id) {
-
+    public function deleteMyNotes($id)
+    {
         //delete all notes by this user
         \App\Models\Note::Where('noteresource_type', 'task')
             ->where('noteresource_id', $id)
-            ->where('note_creatorid', auth()->id())->delete();
+            ->where('note_creatorid', auth()->id())
+            ->delete();
 
         //refeshed data
         $tasks = $this->taskrepo->search($id);
@@ -2880,12 +3179,13 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function createMyNotes($id) {
-
+    public function createMyNotes($id)
+    {
         //delete all notes by this user
         \App\Models\Note::Where('noteresource_type', 'task')
             ->where('noteresource_id', $id)
-            ->where('note_creatorid', auth()->id())->delete();
+            ->where('note_creatorid', auth()->id())
+            ->delete();
 
         //refeshed data
         $tasks = $this->taskrepo->search($id);
@@ -2907,8 +3207,8 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateMyNotes($id) {
-
+    public function updateMyNotes($id)
+    {
         //validation
         if (!request()->filled('task_mynotes')) {
             abort(409, __('lang.fill_in_all_required_fields'));
@@ -2917,7 +3217,8 @@ class Tasks extends Controller {
         //delete all notes by this user
         \App\Models\Note::Where('noteresource_type', 'task')
             ->where('noteresource_id', $id)
-            ->where('note_creatorid', auth()->id())->delete();
+            ->where('note_creatorid', auth()->id())
+            ->delete();
 
         //create note
         $note = new \App\Models\Note();
@@ -2950,8 +3251,8 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cloneTask($id) {
-
+    public function cloneTask($id)
+    {
         //get task
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -2963,7 +3264,6 @@ class Tasks extends Controller {
 
         //show the view
         return new CloneResponse($payload);
-
     }
 
     /**
@@ -2972,36 +3272,64 @@ class Tasks extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cloneStore(ProjectRepository $projectrepo, ProjectPermissions $projectpermissions, TaskAssignedRepository $assignedrepo, $id) {
-
+    public function cloneStore(
+        ProjectRepository $projectrepo,
+        ProjectPermissions $projectpermissions,
+        TaskAssignedRepository $assignedrepo,
+        $id
+    ) {
         //validate task and milestones
-        if (!request()->filled('task_milestoneid') || !request()->filled('project_id')) {
+        if (
+            !request()->filled('task_milestoneid') ||
+            !request()->filled('project_id')
+        ) {
             abort(409, __('lang.fill_in_all_required_fields'));
         }
 
         //project exists
-        if (\App\Models\Project::Where('project_id', request('project_id'))->doesntExist()) {
+        if (
+            \App\Models\Project::Where(
+                'project_id',
+                request('project_id')
+            )->doesntExist()
+        ) {
             abort(409, __('lang.project') . ' - ' . __('lang.is_invalid'));
         }
 
         //project exists
-        if (\App\Models\Milestone::Where('milestone_id', request('task_milestoneid'))->where('milestone_projectid', request('project_id'))->doesntExist()) {
+        if (
+            \App\Models\Milestone::Where(
+                'milestone_id',
+                request('task_milestoneid')
+            )
+                ->where('milestone_projectid', request('project_id'))
+                ->doesntExist()
+        ) {
             abort(409, __('lang.milestone') . ' - ' . __('lang.is_invalid'));
         }
 
         //get users projects
         if (auth()->user()->is_team) {
             if (auth()->user()->is_admin) {
-                $projects = \App\Models\Project::Where('project_type', 'project')->get();
+                $projects = \App\Models\Project::Where(
+                    'project_type',
+                    'project'
+                )->get();
                 $project_list = [];
                 foreach ($projects as $project) {
                     $project_list[] = $project->project_id;
                 }
             } else {
-                $project_list = $projectrepo->usersAssignedAndManageProjects(auth()->id(), 'list');
+                $project_list = $projectrepo->usersAssignedAndManageProjects(
+                    auth()->id(),
+                    'list'
+                );
             }
         } else {
-            $project_list = $rojectrepo->clientsProjects(auth()->user()->clientid, 'list');
+            $project_list = $rojectrepo->clientsProjects(
+                auth()->user()->clientid,
+                'list'
+            );
         }
 
         //validate the project is valid for this user
@@ -3013,22 +3341,29 @@ class Tasks extends Controller {
         $task = \App\Models\Task::Where('task_id', $id)->first();
 
         //project
-        $project = \App\Models\Project::Where('project_id', request('project_id'))->first();
+        $project = \App\Models\Project::Where(
+            'project_id',
+            request('project_id')
+        )->first();
 
         //clone the task
         $data = [
             'task_title' => request('task_title'),
             'task_status' => request('task_status'),
             'task_milestoneid' => request('task_milestoneid'),
-            'copy_checklist' => (request('copy_checklist') == 'on') ? true : false,
-            'copy_files' => (request('copy_files') == 'on') ? true : false,
+            'copy_checklist' =>
+                request('copy_checklist') == 'on' ? true : false,
+            'copy_files' => request('copy_files') == 'on' ? true : false,
         ];
         $new_task = $this->taskrepo->cloneTask($task, $project, $data);
 
         //assign the task to self, for none admin users
         if (auth()->user()->is_team) {
             if (!$projectpermissions->check('super-user', $project)) {
-                $assigned_users = $assignedrepo->add($new_task->task_id, auth()->id());
+                $assigned_users = $assignedrepo->add(
+                    $new_task->task_id,
+                    auth()->id()
+                );
             }
         }
 
@@ -3060,7 +3395,6 @@ class Tasks extends Controller {
 
         //show the view
         return new CloneStoreResponse($payload);
-
     }
 
     /**
@@ -3068,8 +3402,8 @@ class Tasks extends Controller {
      * @param  int  $task task id
      * @return \Illuminate\Http\Response
      */
-    public function recurringSettings($id) {
-
+    public function recurringSettings($id)
+    {
         //get the project
         $task = \App\Models\Task::Where('task_id', $id)->first();
 
@@ -3081,7 +3415,10 @@ class Tasks extends Controller {
 
         //modal request
         if (request('source') == 'modal') {
-            $html = view('pages/task/components/recurring', compact('task'))->render();
+            $html = view(
+                'pages/task/components/recurring',
+                compact('task')
+            )->render();
             $jsondata['dom_html'][] = [
                 'selector' => '#card-left-panel',
                 'action' => 'replace',
@@ -3101,8 +3438,10 @@ class Tasks extends Controller {
      * @param  int  $task task id
      * @return \Illuminate\Http\Response
      */
-    public function recurringSettingsUpdate(TaskRecurrringSettings $request, $id) {
-
+    public function recurringSettingsUpdate(
+        TaskRecurrringSettings $request,
+        $id
+    ) {
         //get project
         $tasks = $this->taskrepo->search($id);
         $task = $tasks->first();
@@ -3113,13 +3452,18 @@ class Tasks extends Controller {
         $task->task_recurring_period = request('task_recurring_period');
         $task->task_recurring_cycles = request('task_recurring_cycles');
         $task->task_recurring_next = request('task_recurring_next');
-        $task->task_recurring_copy_checklists = (request('task_recurring_copy_checklists') == 'on') ? 'yes' : 'no';
-        $task->task_recurring_copy_files = (request('task_recurring_copy_files') == 'on') ? 'yes' : 'no';
-        $task->task_recurring_automatically_assign = (request('task_recurring_automatically_assign') == 'on') ? 'yes' : 'no';
+        $task->task_recurring_copy_checklists =
+            request('task_recurring_copy_checklists') == 'on' ? 'yes' : 'no';
+        $task->task_recurring_copy_files =
+            request('task_recurring_copy_files') == 'on' ? 'yes' : 'no';
+        $task->task_recurring_automatically_assign =
+            request('task_recurring_automatically_assign') == 'on'
+                ? 'yes'
+                : 'no';
         $task->save();
 
         //reset for infinite tasks (incase it had previously been set to finished)
-        if($task->task_recurring_cycles == 0){
+        if ($task->task_recurring_cycles == 0) {
             $task->task_recurring_finished = 'no';
             $task->save();
         }
@@ -3151,10 +3495,13 @@ class Tasks extends Controller {
      * stop an task from recurring
      * @return \Illuminate\Http\Response
      */
-    public function stopRecurring() {
-
+    public function stopRecurring()
+    {
         //get the task
-        $task = \App\Models\Task::Where('task_id', request()->route('task'))->first();
+        $task = \App\Models\Task::Where(
+            'task_id',
+            request()->route('task')
+        )->first();
 
         //update the task
         $task->task_recurring = 'no';
@@ -3192,20 +3539,24 @@ class Tasks extends Controller {
      * @param string $section page section (optional)
      * @param array $data any other data (optional)
      * @return array
+     * Joel
      */
-    private function pageSettings($section = '', $data = []) {
-
+    private function pageSettings($section = '', $data = [])
+    {
         //common settings
         $page = [
-            'crumbs' => [
-                __('lang.tasks'),
-            ],
+            'crumbs' => [__('lang.leads')],
             'crumbs_special_class' => 'list-pages-crumbs',
-            'page' => 'tasks',
+            'page' => 'Leads',
             'no_results_message' => __('lang.no_results_found'),
             'mainmenu_tasks' => 'active',
             'sidepanel_id' => 'sidepanel-filter-tasks',
-            'dynamic_search_url' => url('tasks/search?action=search&taskresource_id=' . request('taskresource_id') . '&taskresource_type=' . request('taskresource_type')),
+            'dynamic_search_url' => url(
+                'tasks/search?action=search&taskresource_id=' .
+                    request('taskresource_id') .
+                    '&taskresource_type=' .
+                    request('taskresource_type')
+            ),
             'add_button_classes' => '',
             'load_more_button_route' => 'tasks',
             'source' => 'list',
@@ -3214,8 +3565,20 @@ class Tasks extends Controller {
         //default modal settings (modify for sepecif sections)
         $page += [
             'add_modal_title' => __('lang.add_task'),
-            'add_modal_create_url' => url('tasks/create?taskresource_id=' . request('taskresource_id') . '&taskresource_type=' . request('taskresource_type')),
-            'add_modal_action_url' => url('tasks?taskresource_id=' . request('taskresource_id') . '&taskresource_type=' . request('taskresource_type') . '&count=' . ($data['count'] ?? '')),
+            'add_modal_create_url' => url(
+                'tasks/create?taskresource_id=' .
+                    request('taskresource_id') .
+                    '&taskresource_type=' .
+                    request('taskresource_type')
+            ),
+            'add_modal_action_url' => url(
+                'tasks?taskresource_id=' .
+                    request('taskresource_id') .
+                    '&taskresource_type=' .
+                    request('taskresource_type') .
+                    '&count=' .
+                    ($data['count'] ?? '')
+            ),
             'add_modal_action_ajax_class' => '',
             'add_modal_action_ajax_loading_target' => 'commonModalBody',
             'add_modal_action_method' => 'POST',
@@ -3224,8 +3587,8 @@ class Tasks extends Controller {
         //tasks list page
         if ($section == 'tasks') {
             $page += [
-                'meta_title' => __('lang.tasks'),
-                'heading' => __('lang.tasks'),
+                'meta_title' => __('lang.leads'),
+                'heading' => __('lang.leads'),
                 'mainmenu_tasks' => 'active',
             ];
             return $page;
@@ -3236,14 +3599,12 @@ class Tasks extends Controller {
             //adjust
             $page['page'] = 'task';
             //add
-            $page += [
-            ];
+            $page += [];
             return $page;
         }
 
         //ext page settings
         if ($section == 'ext') {
-
             $page += [
                 'list_page_actions_size' => 'col-lg-12',
             ];
@@ -3274,14 +3635,17 @@ class Tasks extends Controller {
      * data for the stats widget
      * @return array
      */
-    private function statsWidget($data = array()) {
-
+    private function statsWidget($data = [])
+    {
         //default values
         $stats = [];
 
         foreach (config('task_statuses') as $status) {
             $stat = [
-                'value' => \App\Models\Task::where('task_status', $status->taskstatus_id)->count(),
+                'value' => \App\Models\Task::where(
+                    'task_status',
+                    $status->taskstatus_id
+                )->count(),
                 'title' => runtimeLang($status->taskstatus_title),
                 'percentage' => '100%',
                 'color' => 'bg-' . $status->taskstatus_color,
