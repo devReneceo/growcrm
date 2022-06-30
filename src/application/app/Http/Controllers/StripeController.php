@@ -68,7 +68,10 @@ class StripeController extends Controller
                     User::where('id', $p->session_creatorid)->update([
                         'level' => 'premium',
                     ]);
-                    return view('stripe/stripe', ['status' => 'success']);
+                    return view('stripe/stripe', [
+                        'status' => 'success',
+                        'nowIsPremium' => 'yes',
+                    ]);
                 }
                 return view('stripe/stripe', [
                     'status' => 'error',

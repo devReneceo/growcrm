@@ -60,7 +60,7 @@
                 @endif
 
 
-                @if(auth()->user()->level == 'free')
+                @if(auth()->user()->level == 'free' || !isset($nowIsPremium))
                 <li class="nav-item">
                     <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
                         href="javascript:void(0)"
@@ -92,7 +92,7 @@
                 </script>
                  @endif
 
-                 @if(auth()->user()->level == 'premium')
+                 @if(auth()->user()->level == 'premium' || isset($nowIsPremium))
                 <li class="nav-item">
                     <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
                         href="javascript:void(0);" data-url="{{ url('events/topnav?eventtracking_status=unread') }}"
