@@ -60,5 +60,5 @@
 </div>
 
 @endif
-@endsection
+
 @endsection
