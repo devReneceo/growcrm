@@ -29,6 +29,7 @@ class StripeController extends Controller
         //, compact('page', 'payload')
         //  return view('stripe/stripe');
     }
+
     public function stripeSuccess(Request $request)
     {
         \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
@@ -88,6 +89,7 @@ class StripeController extends Controller
             }
         }
     }
+
     public function createSession(Request $request)
     {
         \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
@@ -111,7 +113,7 @@ class StripeController extends Controller
                 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/stripeResponse?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app',
         ]);
-
+        //$session->id
         PaymentSession::create([
             'session_creatorid' => $request->userId,
             'session_creator_fullname' => $request->userName,
@@ -120,101 +122,8 @@ class StripeController extends Controller
             'session_subscription' => $session->subscription,
             'session_id' => $session->id,
         ]);
+
         $session['publickey'] = env('STRP_PUBLIC');
         echo json_encode($session);
-    }
-
-    public function createAssociateStripesession(Request $request)
-    {
-        \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
-
-        $session = \Stripe\Checkout\Session::create([
-            'line_items' => [
-                [
-                    'price' => 'price_1LKv0ELL3HZheMhNmgjCkYwM',
-                    'quantity' => 1,
-                ],
-            ],
-            'customer_email' => $request->userEmail,
-            'mode' => 'subscription',
-            'success_url' =>
-                'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/subscriptionSuccess?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app',
-        ]);
-
-        PaymentSession::create([
-            'session_creatorid' => $request->userId,
-            'session_creator_fullname' => $request->userName,
-            'session_creator_email' => $request->userEmail,
-            'session_amount' => $session->amount_total / 100,
-            'session_subscription' => $session->subscription,
-            'session_id' => $session->id,
-        ]);
-        $session['publickey'] = env('STRP_PUBLIC');
-        echo json_encode($session);
-    }
-
-    public function subscriptionSuccess(Request $request)
-    {
-        \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
-        $session = \Stripe\Checkout\Session::retrieve($request->session_id, []);
-
-        echo '<pre>';
-        print_r($session);
-        die();
-        $payment = PaymentSession::where('session_id', $request->session_id)
-            ->select('id', 'session_creatorid')
-            ->get();
-        foreach ($payment as $p) {
-            try {
-                PaymentSession::where('id', $p->id)->update([
-                    'session_status' => $session->status,
-                    'payment_status' => $session->payment_status,
-                    'session_updated' => date(' yyyy-mm-dd'),
-                ]);
-
-                $paymentcount = Payment::where(
-                    'payment_invoiceid',
-                    $session->payment_intent
-                )
-                    ->where('payment_clientid', $p->session_creatorid)
-                    ->get()
-                    ->count();
-
-                if (!$paymentcount) {
-                    Payment::create([
-                        'payment_creatorid' => $p->session_creatorid,
-                        'payment_invoiceid' => $session->payment_intent,
-                        'payment_clientid' => $p->session_creatorid,
-                        'payment_amount' => $session->amount_total / 100,
-                        'payment_invoiceid' => $session->payment_intent,
-                        'payment_gateway' => 'stripe',
-                    ]);
-                }
-
-                if ($session->payment_status == 'paid') {
-                    User::where('id', $p->session_creatorid)->update([
-                        'level' => 'premium',
-                    ]);
-                    return view('stripe/stripe', [
-                        'status' => 'success',
-                        'nowIsPremium' => 'yes',
-                    ]);
-                }
-                return view('stripe/stripe', [
-                    'status' => 'error',
-                    'message' => 'status not paid',
-                    'session' => $session,
-                ]);
-            } catch (\Throwable $th) {
-                return view('stripe/stripe', [
-                    'status' => 'error',
-                    'message' => 'Error processing your Premium access.',
-                    'payment_status' => $session->payment_status,
-                    'payment_id' => $session->payment_intent,
-                    'th' => $th,
-                ]);
-            }
-        }
     }
 }

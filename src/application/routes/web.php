@@ -1,12 +1,11 @@
 <?php
-use Illuminate\Http\Request;
-if (App::environment('production')) {
-    URL::forceScheme('https');
-}
+
 //TESTING [DEV]
 Route::get('test', 'Test@index');
 Route::post('test', 'Test@index');
-
+Route::any('register', 'Register@index');
+Route::post('newUser', 'Register@add');
+Route::any('newLeadAssociate', 'Register@leadAssociate');
 //HOME PAGE
 Route::any('/', function () {
     return redirect('/home');
@@ -23,29 +22,23 @@ Route::post('/signup', 'Authenticate@signUpAction');
 Route::get('/resetpassword', 'Authenticate@resetPassword');
 Route::post('/resetpassword', 'Authenticate@resetPasswordAction');
 
-// Route::get('/stripeResponse', function (Request $request) {
-//     echo json_encode($request->all());
-//     // echo 'Stripe Response: <pre>';
-//     // print_r($request);
-//     // echo '<br>session:' . $request->session;
-//     // echo '<br>session:' . $request->type;
-// });
-Route::get('/stripeResponse', 'StripeController@stripeSuccess');
-
-Route::get('/createStripesession', 'StripeController@createSession');
-
-Route::get('/canceledStripeResponse', function (Request $request) {
-    echo 'Canceled  Stripe Response: <pre>';
-    print_r($request);
-});
-
 //LOGOUT
-Route::any('logout', function () {
+Route::get('logout', function () {
     Auth::logout();
     return redirect('/login');
 });
 
-//CLIENTS
+Route::any('/gopremium', 'StripeController@index');
+Route::get('/createStripesession', 'StripeController@createSession');
+Route::get(
+    '/createAssociateStripesession',
+    'StripeController@createAssociateStripesession'
+);
+Route::get('/subscriptionSuccess', 'StripeController@subscriptionSuccess');
+Route::get('/stripeResponse', 'StripeController@stripeSuccess');
+Route::get('/canceledStripeResponse', 'StripeController@success');
+
+//CLIENTS session_id
 Route::group(['prefix' => 'clients'], function () {
     Route::any('/search', 'Clients@index');
     Route::post('/delete', 'Clients@destroy')->middleware(['demoModeCheck']);
@@ -68,10 +61,11 @@ Route::group(['prefix' => 'clients'], function () {
             'details|contacts|projects|files|tickets|invoices|expenses|payments|timesheets|estimates|notes',
     ]);
 });
+
 Route::any('/client/{x}/profile', 'Clients@profile')->where('x', '[0-9]+');
 Route::resource('clients', 'Clients');
 
-//CONTACTS
+//CONTACTS php artisan make:controller StripeController --model=Stripe
 Route::group(['prefix' => 'contacts'], function () {
     Route::any('/search', 'Contacts@index');
     Route::get('/updatepreferences', 'Contacts@updatePreferences');

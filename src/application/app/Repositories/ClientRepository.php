@@ -17,8 +17,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Log;
 
-class ClientRepository {
-
+class ClientRepository
+{
     /**
      * The clients repository instance.
      */
@@ -37,11 +37,14 @@ class ClientRepository {
     /**
      * Inject dependecies
      */
-    public function __construct(Client $clients, TagRepository $tagrepo, UserRepository $userrepo) {
+    public function __construct(
+        Client $clients,
+        TagRepository $tagrepo,
+        UserRepository $userrepo
+    ) {
         $this->clients = $clients;
         $this->tagrepo = $tagrepo;
         $this->userrepo = $userrepo;
-
     }
 
     /**
@@ -49,8 +52,8 @@ class ClientRepository {
      * @param int $id optional for getting a single, specified record
      * @return object clients collection
      */
-    public function search($id = '') {
-
+    public function search($id = '')
+    {
         $clients = $this->clients->newQuery();
 
         // all client fields
@@ -88,19 +91,29 @@ class ClientRepository {
         });
 
         //join: client category
-        $clients->leftJoin('categories', 'categories.category_id', '=', 'clients.client_categoryid');
+        $clients->leftJoin(
+            'categories',
+            'categories.category_id',
+            '=',
+            'clients.client_categoryid'
+        );
 
         //join: users reminders - do not do this for cronjobs
         if (auth()->check()) {
             $clients->leftJoin('reminders', function ($join) {
-                $join->on('reminders.reminderresource_id', '=', 'clients.client_id')
+                $join
+                    ->on(
+                        'reminders.reminderresource_id',
+                        '=',
+                        'clients.client_id'
+                    )
                     ->where('reminders.reminderresource_type', '=', 'client')
                     ->where('reminders.reminder_userid', '=', auth()->id());
             });
         }
 
         //default where
-        $clients->whereRaw("1 = 1");
+        $clients->whereRaw('1 = 1');
 
         //ignore system client
         $clients->where('client_id', '>', 0);
@@ -120,30 +133,53 @@ class ClientRepository {
 
         //filter: created date (start)
         if (request()->filled('filter_date_created_start')) {
-            $clients->whereDate('client_created', '>=', request('filter_date_created_start'));
+            $clients->whereDate(
+                'client_created',
+                '>=',
+                request('filter_date_created_start')
+            );
         }
 
         //filter: created date (end)
         if (request()->filled('filter_date_created_end')) {
-            $clients->whereDate('client_created', '<=', request('filter_date_created_end'));
+            $clients->whereDate(
+                'client_created',
+                '<=',
+                request('filter_date_created_end')
+            );
         }
 
         //filter: contacts
-        if (is_array(request('filter_client_contacts')) && !empty(array_filter(request('filter_client_contacts'))) && !empty(array_filter(request('filter_client_contacts')))) {
+        if (
+            is_array(request('filter_client_contacts')) &&
+            !empty(array_filter(request('filter_client_contacts'))) &&
+            !empty(array_filter(request('filter_client_contacts')))
+        ) {
             $clients->whereHas('users', function ($query) {
                 $query->whereIn('id', request('filter_client_contacts'));
             });
         }
 
         //filter: catagories
-        if (is_array(request('filter_client_categoryid')) && !empty(array_filter(request('filter_client_categoryid'))) && !empty(array_filter(request('filter_client_categoryid')))) {
+        if (
+            is_array(request('filter_client_categoryid')) &&
+            !empty(array_filter(request('filter_client_categoryid'))) &&
+            !empty(array_filter(request('filter_client_categoryid')))
+        ) {
             $clients->whereHas('category', function ($query) {
-                $query->whereIn('category_id', request('filter_client_categoryid'));
+                $query->whereIn(
+                    'category_id',
+                    request('filter_client_categoryid')
+                );
             });
         }
 
         //filter: tags
-        if (is_array(request('filter_tags')) && !empty(array_filter(request('filter_tags'))) && !empty(array_filter(request('filter_tags')))) {
+        if (
+            is_array(request('filter_tags')) &&
+            !empty(array_filter(request('filter_tags'))) &&
+            !empty(array_filter(request('filter_tags')))
+        ) {
             $clients->whereHas('tags', function ($query) {
                 $query->whereIn('tag_title', request('filter_tags'));
             });
@@ -153,39 +189,60 @@ class ClientRepository {
         if (request()->filled('search_query')) {
             $clients->where(function ($query) {
                 $query->Where('client_id', '=', request('search_query'));
-                $query->orwhere('client_company_name', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('client_created', 'LIKE', '%' . request('search_query') . '%');
+                $query->orwhere(
+                    'client_company_name',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'client_created',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
                 $query->orWhere('client_status', '=', request('search_query'));
                 $query->orWhereHas('tags', function ($query) {
-                    $query->where('tag_title', 'LIKE', '%' . request('search_query') . '%');
+                    $query->where(
+                        'tag_title',
+                        'LIKE',
+                        '%' . request('search_query') . '%'
+                    );
                 });
                 $query->orWhereHas('category', function ($query) {
-                    $query->where('category_name', 'LIKE', '%' . request('search_query') . '%');
+                    $query->where(
+                        'category_name',
+                        'LIKE',
+                        '%' . request('search_query') . '%'
+                    );
                 });
             });
-
         }
 
         //sorting
-        if (in_array(request('sortorder'), array('desc', 'asc')) && request('orderby') != '') {
+        if (
+            in_array(request('sortorder'), ['desc', 'asc']) &&
+            request('orderby') != ''
+        ) {
             //direct column name
             if (Schema::hasColumn('clients', request('orderby'))) {
                 $clients->orderBy(request('orderby'), request('sortorder'));
             }
             //others
             switch (request('orderby')) {
-            case 'contact':
-                $clients->orderBy('first_name', request('sortorder'));
-                break;
-            case 'count_projects':
-                $clients->orderBy('count_projects_all', request('sortorder'));
-                break;
-            case 'sum_invoices':
-                $clients->orderBy('sum_invoices_all', request('sortorder'));
-                break;
-            case 'category':
-                $clients->orderBy('category_name', request('sortorder'));
-                break;
+                case 'contact':
+                    $clients->orderBy('first_name', request('sortorder'));
+                    break;
+                case 'count_projects':
+                    $clients->orderBy(
+                        'count_projects_all',
+                        request('sortorder')
+                    );
+                    break;
+                case 'sum_invoices':
+                    $clients->orderBy('sum_invoices_all', request('sortorder'));
+                    break;
+                case 'category':
+                    $clients->orderBy('category_name', request('sortorder'));
+                    break;
             }
         } else {
             //default sorting
@@ -193,23 +250,22 @@ class ClientRepository {
         }
 
         //eager load
-        $clients->with([
-            'tags',
-            'users',
-        ]);
+        $clients->with(['tags', 'users']);
 
         // Get the results and return them.
-        return $clients->paginate(config('system.settings_system_pagination_limits'));
+        return $clients->paginate(
+            config('system.settings_system_pagination_limits')
+        );
     }
 
     /**
      * Create a new client record [API]
      * @return mixed object|bool  object or process outcome
      */
-    public function create($data = []) {
-
+    public function create($data = [])
+    {
         //save new user
-        $client = new $this->clients;
+        $client = new $this->clients();
 
         /** ----------------------------------------------
          * create the client
@@ -225,37 +281,67 @@ class ClientRepository {
         $client->client_billing_state = request('client_billing_state');
         $client->client_billing_zip = request('client_billing_zip');
         $client->client_billing_country = request('client_billing_country');
-        $client->client_categoryid = (request()->filled('client_categoryid')) ? request('client_categoryid') : 2; //default
+        $client->client_categoryid = request()->filled('client_categoryid')
+            ? request('client_categoryid')
+            : 2; //default
 
         //module settings
         $client->client_app_modules = request('client_app_modules');
         if (request('client_app_modules') == 'custom') {
             if (config('system.settings_modules_projects') == 'enabled') {
-                $client->client_settings_modules_projects = (request('client_settings_modules_projects') == 'on') ? 'enabled' : 'disabled';
+                $client->client_settings_modules_projects =
+                    request('client_settings_modules_projects') == 'on'
+                        ? 'enabled'
+                        : 'disabled';
             }
             if (config('system.settings_modules_invoices') == 'enabled') {
-                $client->client_settings_modules_invoices = (request('client_settings_modules_invoices') == 'on') ? 'enabled' : 'disabled';
+                $client->client_settings_modules_invoices =
+                    request('client_settings_modules_invoices') == 'on'
+                        ? 'enabled'
+                        : 'disabled';
             }
             if (config('system.settings_modules_payments') == 'enabled') {
-                $client->client_settings_modules_payments = (request('client_settings_modules_payments') == 'on') ? 'enabled' : 'disabled';
+                $client->client_settings_modules_payments =
+                    request('client_settings_modules_payments') == 'on'
+                        ? 'enabled'
+                        : 'disabled';
             }
             if (config('system.settings_modules_knowledgebase') == 'enabled') {
-                $client->client_settings_modules_knowledgebase = (request('client_settings_modules_knowledgebase') == 'on') ? 'enabled' : 'disabled';
+                $client->client_settings_modules_knowledgebase =
+                    request('client_settings_modules_knowledgebase') == 'on'
+                        ? 'enabled'
+                        : 'disabled';
             }
             if (config('system.settings_modules_estimates') == 'enabled') {
-                $client->client_settings_modules_estimates = (request('client_settings_modules_estimates') == 'on') ? 'enabled' : 'disabled';
+                $client->client_settings_modules_estimates =
+                    request('client_settings_modules_estimates') == 'on'
+                        ? 'enabled'
+                        : 'disabled';
             }
             if (config('system.settings_modules_subscriptions') == 'enabled') {
-                $client->client_settings_modules_subscriptions = (request('client_settings_modules_subscriptions') == 'on') ? 'enabled' : 'disabled';
+                $client->client_settings_modules_subscriptions =
+                    request('client_settings_modules_subscriptions') == 'on'
+                        ? 'enabled'
+                        : 'disabled';
             }
             if (config('system.settings_modules_tickets') == 'enabled') {
-                $client->client_settings_modules_tickets = (request('client_settings_modules_tickets') == 'on') ? 'enabled' : 'disabled';
+                $client->client_settings_modules_tickets =
+                    request('client_settings_modules_tickets') == 'on'
+                        ? 'enabled'
+                        : 'disabled';
             }
         }
 
         //save
         if (!$client->save()) {
-            Log::error("record could not be saved - database error", ['process' => '[ClientRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be saved - database error', [
+                'process' => '[ClientRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
 
@@ -277,8 +363,18 @@ class ClientRepository {
             'clientid' => $client->client_id,
         ]);
         $password = str_random(7);
-        if (!$user = $this->userrepo->create(bcrypt($password), 'user')) {
-            Log::error("default client user could not be added - database error", ['process' => '[ClientRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+        if (!($user = $this->userrepo->create(bcrypt($password), 'user'))) {
+            Log::error(
+                'default client user could not be added - database error',
+                [
+                    'process' => '[ClientRepository]',
+                    config('app.debug_ref'),
+                    'function' => __FUNCTION__,
+                    'file' => basename(__FILE__),
+                    'line' => __LINE__,
+                    'path' => __FILE__,
+                ]
+            );
             abort(409);
         }
 
@@ -305,20 +401,28 @@ class ClientRepository {
      * Create a new client
      * @return mixed object|bool client object or failed
      */
-    public function signUp() {
-
+    public function signUp()
+    {
         //save new user
-        $client = new $this->clients;
+        $client = new $this->clients();
 
         //data
         $client->client_company_name = request('client_company_name');
+        $client->client_phone = request('phone');
         $client->client_creatorid = 0;
 
         //save and return id
         if ($client->save()) {
             return $client;
         } else {
-            Log::error("record could not be saved - database error", ['process' => '[ClientRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be saved - database error', [
+                'process' => '[ClientRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
     }
@@ -328,11 +432,19 @@ class ClientRepository {
      * @param int $id client id
      * @return mixed int|bool client id or failed
      */
-    public function update($id) {
-
+    public function update($id)
+    {
         //get the record
-        if (!$client = $this->clients->find($id)) {
-            Log::error("client record could not be found", ['process' => '[ClientRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'client_id' => $id ?? '']);
+        if (!($client = $this->clients->find($id))) {
+            Log::error('client record could not be found', [
+                'process' => '[ClientRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+                'client_id' => $id ?? '',
+            ]);
             return false;
         }
 
@@ -357,31 +469,54 @@ class ClientRepository {
             $client->client_shipping_city = request('client_shipping_city');
             $client->client_shipping_state = request('client_shipping_state');
             $client->client_shipping_zip = request('client_shipping_zip');
-            $client->client_shipping_country = request('client_shipping_country');
+            $client->client_shipping_country = request(
+                'client_shipping_country'
+            );
         }
 
         //module permissions
         $client->client_app_modules = request('client_app_modules');
         if (config('system.settings_modules_projects') == 'enabled') {
-            $client->client_settings_modules_projects = (request('client_settings_modules_projects') == 'on') ? 'enabled' : 'disabled';
+            $client->client_settings_modules_projects =
+                request('client_settings_modules_projects') == 'on'
+                    ? 'enabled'
+                    : 'disabled';
         }
         if (config('system.settings_modules_invoices') == 'enabled') {
-            $client->client_settings_modules_invoices = (request('client_settings_modules_invoices') == 'on') ? 'enabled' : 'disabled';
+            $client->client_settings_modules_invoices =
+                request('client_settings_modules_invoices') == 'on'
+                    ? 'enabled'
+                    : 'disabled';
         }
         if (config('system.settings_modules_payments') == 'enabled') {
-            $client->client_settings_modules_payments = (request('client_settings_modules_payments') == 'on') ? 'enabled' : 'disabled';
+            $client->client_settings_modules_payments =
+                request('client_settings_modules_payments') == 'on'
+                    ? 'enabled'
+                    : 'disabled';
         }
         if (config('system.settings_modules_knowledgebase') == 'enabled') {
-            $client->client_settings_modules_knowledgebase = (request('client_settings_modules_knowledgebase') == 'on') ? 'enabled' : 'disabled';
+            $client->client_settings_modules_knowledgebase =
+                request('client_settings_modules_knowledgebase') == 'on'
+                    ? 'enabled'
+                    : 'disabled';
         }
         if (config('system.settings_modules_estimates') == 'enabled') {
-            $client->client_settings_modules_estimates = (request('client_settings_modules_estimates') == 'on') ? 'enabled' : 'disabled';
+            $client->client_settings_modules_estimates =
+                request('client_settings_modules_estimates') == 'on'
+                    ? 'enabled'
+                    : 'disabled';
         }
         if (config('system.settings_modules_subscriptions') == 'enabled') {
-            $client->client_settings_modules_subscriptions = (request('client_settings_modules_subscriptions') == 'on') ? 'enabled' : 'disabled';
+            $client->client_settings_modules_subscriptions =
+                request('client_settings_modules_subscriptions') == 'on'
+                    ? 'enabled'
+                    : 'disabled';
         }
         if (config('system.settings_modules_tickets') == 'enabled') {
-            $client->client_settings_modules_tickets = (request('client_settings_modules_tickets') == 'on') ? 'enabled' : 'disabled';
+            $client->client_settings_modules_tickets =
+                request('client_settings_modules_tickets') == 'on'
+                    ? 'enabled'
+                    : 'disabled';
         }
 
         //status
@@ -391,13 +526,19 @@ class ClientRepository {
 
         //save
         if ($client->save()) {
-
             //apply custom fields data
             $this->applyCustomFields($client->client_id);
 
             return $client->client_id;
         } else {
-            Log::error("record could not be updated - database error", ['process' => '[ClientRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be updated - database error', [
+                'process' => '[ClientRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
     }
@@ -408,8 +549,8 @@ class ClientRepository {
      * @param string $searchterm
      * @return object client model object
      */
-    public function autocompleteFeed($type = '', $searchterm = '') {
-
+    public function autocompleteFeed($type = '', $searchterm = '')
+    {
         //validation
         if ($type == '' || $searchterm == '') {
             return [];
@@ -424,7 +565,11 @@ class ClientRepository {
         //feed: company names
         if ($type == 'company_name') {
             $query->selectRaw('client_company_name AS value, client_id AS id');
-            $query->where('client_company_name', 'LIKE', '%' . $searchterm . '%');
+            $query->where(
+                'client_company_name',
+                'LIKE',
+                '%' . $searchterm . '%'
+            );
         }
 
         //return
@@ -436,10 +581,10 @@ class ClientRepository {
      * @param int $id record id
      * @return bool process outcome
      */
-    public function updateLogo($id) {
-
+    public function updateLogo($id)
+    {
         //get the user
-        if (!$client = $this->clients->find($id)) {
+        if (!($client = $this->clients->find($id))) {
             return false;
         }
 
@@ -451,7 +596,14 @@ class ClientRepository {
         if ($client->save()) {
             return true;
         } else {
-            Log::error("record could not be updated - database error", ['process' => '[ClientRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be updated - database error', [
+                'process' => '[ClientRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
     }
@@ -459,19 +611,20 @@ class ClientRepository {
     /**
      * update model wit custom fields data (where enabled)
      */
-    public function applyCustomFields($id = '') {
-
+    public function applyCustomFields($id = '')
+    {
         //custom fields
-        $fields = \App\Models\CustomField::Where('customfields_type', 'clients')->get();
+        $fields = \App\Models\CustomField::Where(
+            'customfields_type',
+            'clients'
+        )->get();
         foreach ($fields as $field) {
             if ($field->customfields_standard_form_status == 'enabled') {
                 $field_name = $field->customfields_name;
-                \App\Models\Client::where('client_id', $id)
-                    ->update([
-                        "$field_name" => request($field_name),
-                    ]);
+                \App\Models\Client::where('client_id', $id)->update([
+                    "$field_name" => request($field_name),
+                ]);
             }
         }
     }
-
 }

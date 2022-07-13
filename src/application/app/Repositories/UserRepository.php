@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Log;
 
-class UserRepository {
-
+class UserRepository
+{
     /**
      * The users repository instance.
      */
@@ -24,7 +24,8 @@ class UserRepository {
     /**
      * Inject dependecies
      */
-    public function __construct(User $users) {
+    public function __construct(User $users)
+    {
         $this->users = $users;
     }
 
@@ -33,8 +34,8 @@ class UserRepository {
      * @param int $id record id
      * @return object
      */
-    public function get($id = '') {
-
+    public function get($id = '')
+    {
         //new query
         $users = $this->users->newQuery();
 
@@ -58,14 +59,21 @@ class UserRepository {
      * @param int $id The user id
      * @return bool
      */
-    public function exists($id = '') {
-
+    public function exists($id = '')
+    {
         //new query
         $users = $this->users->newQuery();
 
         //validation
         if (!is_numeric($id)) {
-            Log::error("validation error - invalid params", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('validation error - invalid params', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
 
@@ -79,8 +87,8 @@ class UserRepository {
      * @param int $id optional for getting a single, specified record
      * @return object user collection
      */
-    public function search($id = '') {
-
+    public function search($id = '')
+    {
         //user object
         $users = $this->users->newQuery();
 
@@ -110,12 +118,20 @@ class UserRepository {
 
         //filter: created date (start)
         if (request()->filled('filter_date_created_start')) {
-            $users->whereDate('created', '>=', request('filter_date_created_start'));
+            $users->whereDate(
+                'created',
+                '>=',
+                request('filter_date_created_start')
+            );
         }
 
         //filter: created date (end)
         if (request()->filled('filter_date_created_end')) {
-            $users->whereDate('created', '<=', request('filter_date_created_end'));
+            $users->whereDate(
+                'created',
+                '<=',
+                request('filter_date_created_end')
+            );
         }
 
         //filters: primary or not
@@ -124,17 +140,26 @@ class UserRepository {
         }
 
         //filters-array: name  (NB: the user id is the value received)
-        if (is_array(request('filter_name')) && !empty(array_filter(request('filter_name')))) {
+        if (
+            is_array(request('filter_name')) &&
+            !empty(array_filter(request('filter_name')))
+        ) {
             $users->whereIn('id', request('filter_name'));
         }
 
         //filters-array: email (NB: the user id is the value received)
-        if (is_array(request('filter_email')) && !empty(array_filter(request('filter_email')))) {
+        if (
+            is_array(request('filter_email')) &&
+            !empty(array_filter(request('filter_email')))
+        ) {
             $users->whereIn('id', request('filter_email'));
         }
 
         //filters-array: client  (NB: the client id is the value received)
-        if (is_array(request('filter_clientid')) && !empty(array_filter(request('filter_clientid')))) {
+        if (
+            is_array(request('filter_clientid')) &&
+            !empty(array_filter(request('filter_clientid')))
+        ) {
             $users->whereIn('clientid', request('filter_clientid'));
         }
 
@@ -144,35 +169,64 @@ class UserRepository {
         }
 
         //resource filtering
-        if (request()->filled('contactresource_type') && request()->filled('contactresource_id')) {
+        if (
+            request()->filled('contactresource_type') &&
+            request()->filled('contactresource_id')
+        ) {
             switch (request('contactresource_type')) {
-            case 'client':
-                $users->where('clientid', request('contactresource_id'));
-                break;
+                case 'client':
+                    $users->where('clientid', request('contactresource_id'));
+                    break;
             }
         }
 
         //search: various client columns and relationships (where first, then wherehas)
         if (request()->filled('search_query')) {
             $users->where(function ($query) {
-                $query->where('first_name', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('last_name', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('email', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('phone', 'LIKE', '%' . request('search_query') . '%');
-                $query->orWhere('client_company_name', 'LIKE', '%' . request('search_query') . '%');
+                $query->where(
+                    'first_name',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'last_name',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'email',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'phone',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
+                $query->orWhere(
+                    'client_company_name',
+                    'LIKE',
+                    '%' . request('search_query') . '%'
+                );
             });
         }
 
         //sorting
-        if (in_array(request('sortorder'), array('desc', 'asc')) && request('orderby') != '') {
+        if (
+            in_array(request('sortorder'), ['desc', 'asc']) &&
+            request('orderby') != ''
+        ) {
             if (Schema::hasColumn('users', request('orderby'))) {
                 $users->orderBy(request('orderby'), request('sortorder'));
             }
             //others
             switch (request('orderby')) {
-            case 'company_name':
-                $users->orderBy('client_company_name', request('sortorder'));
-                break;
+                case 'company_name':
+                    $users->orderBy(
+                        'client_company_name',
+                        request('sortorder')
+                    );
+                    break;
             }
         } else {
             //default sorting
@@ -180,12 +234,12 @@ class UserRepository {
         }
 
         //eager load
-        $users->with([
-            'role',
-        ]);
+        $users->with(['role']);
 
         // Get the results and return them.
-        return $users->paginate(config('system.settings_system_pagination_limits'));
+        return $users->paginate(
+            config('system.settings_system_pagination_limits')
+        );
     }
 
     /**
@@ -194,8 +248,8 @@ class UserRepository {
      * @param int $id users id
      * @return bool
      */
-    public function updatePreferences($id = '') {
-
+    public function updatePreferences($id = '')
+    {
         //validation
         if (!is_numeric($id)) {
             return false;
@@ -203,35 +257,54 @@ class UserRepository {
 
         //get user from database
         if ($user = $this->users->find($id)) {
-
             //preference: left menu position
-            if (in_array(request('leftmenu_position'), array('open', 'collapsed'))) {
+            if (in_array(request('leftmenu_position'), ['open', 'collapsed'])) {
                 $user->pref_leftmenu_position = request('leftmenu_position');
             }
 
             //preference: stats panel position
-            if (in_array(request('statspanel_position'), array('open', 'collapsed'))) {
-                $user->pref_statspanel_position = request('statspanel_position');
+            if (
+                in_array(request('statspanel_position'), ['open', 'collapsed'])
+            ) {
+                $user->pref_statspanel_position = request(
+                    'statspanel_position'
+                );
             }
 
             //preference: show own tasks or all
-            if (in_array(request('pref_filter_own_tasks'), array('yes', 'no'))) {
+            if (in_array(request('pref_filter_own_tasks'), ['yes', 'no'])) {
                 $user->pref_filter_own_tasks = request('pref_filter_own_tasks');
             }
 
             //preference: show archived tasks
-            if (in_array(request('pref_filter_show_archived_tasks'), array('yes', 'no'))) {
-                $user->pref_filter_own_tasks = request('pref_filter_show_archived_tasks');
+            if (
+                in_array(request('pref_filter_show_archived_tasks'), [
+                    'yes',
+                    'no',
+                ])
+            ) {
+                $user->pref_filter_own_tasks = request(
+                    'pref_filter_show_archived_tasks'
+                );
             }
 
             //preference: show own projects or all
-            if (in_array(request('pref_filter_own_projects'), array('yes', 'no'))) {
-                $user->pref_filter_own_projects = request('pref_filter_own_projects');
+            if (in_array(request('pref_filter_own_projects'), ['yes', 'no'])) {
+                $user->pref_filter_own_projects = request(
+                    'pref_filter_own_projects'
+                );
             }
 
             //preference: show own projects or all
-            if (in_array(request('pref_filter_show_archived_projects'), array('yes', 'no'))) {
-                $user->pref_filter_show_archived_projects = request('pref_filter_show_archived_projects');
+            if (
+                in_array(request('pref_filter_show_archived_projects'), [
+                    'yes',
+                    'no',
+                ])
+            ) {
+                $user->pref_filter_show_archived_projects = request(
+                    'pref_filter_show_archived_projects'
+                );
             }
 
             //update preferences
@@ -249,10 +322,10 @@ class UserRepository {
      * @param string $returning return id|obj
      * @return bool
      */
-    public function create($password = '', $returning = 'id') {
-
+    public function create($password = '', $returning = 'id')
+    {
         //save new user
-        $user = new $this->users;
+        $user = new $this->users();
 
         //data
         $user->type = request('type');
@@ -280,7 +353,8 @@ class UserRepository {
         }
 
         //dashboard access
-        $user->dashboard_access = (request('dashboard_access') == 'on') ? 'yes' : 'no';
+        $user->dashboard_access =
+            request('dashboard_access') == 'on' ? 'yes' : 'no';
 
         //team specific details
         if (request('type') == 'team') {
@@ -290,17 +364,33 @@ class UserRepository {
 
         //client specific details
         if (request('type') == 'client') {
-            $user->notifications_new_project = config('settings.default_notifications_client.notifications_new_project');
-            $user->notifications_projects_activity = config('settings.default_notifications_client.notifications_projects_activity');
-            $user->notifications_billing_activity = config('settings.default_notifications_client.notifications_billing_activity');
-            $user->notifications_tasks_activity = config('settings.default_notifications_client.notifications_tasks_activity');
-            $user->notifications_tickets_activity = config('settings.default_notifications_client.notifications_tickets_activity');
-            $user->notifications_system = config('settings.default_notifications_client.notifications_system');
-            $user->force_password_change = config('settings.force_password_change');
+            $user->notifications_new_project = config(
+                'settings.default_notifications_client.notifications_new_project'
+            );
+            $user->notifications_projects_activity = config(
+                'settings.default_notifications_client.notifications_projects_activity'
+            );
+            $user->notifications_billing_activity = config(
+                'settings.default_notifications_client.notifications_billing_activity'
+            );
+            $user->notifications_tasks_activity = config(
+                'settings.default_notifications_client.notifications_tasks_activity'
+            );
+            $user->notifications_tickets_activity = config(
+                'settings.default_notifications_client.notifications_tickets_activity'
+            );
+            $user->notifications_system = config(
+                'settings.default_notifications_client.notifications_system'
+            );
+            $user->force_password_change = config(
+                'settings.force_password_change'
+            );
         }
 
         //default language
-        $user->pref_language = config('system.settings_system_language_default');
+        $user->pref_language = config(
+            'system.settings_system_language_default'
+        );
 
         //save
         if ($user->save()) {
@@ -310,7 +400,14 @@ class UserRepository {
                 return $user;
             }
         } else {
-            Log::error("record could not be saved - database error", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be saved - database error', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
     }
@@ -321,35 +418,58 @@ class UserRepository {
      * @param string $type team or client
      * @return bool
      */
-    public function signUp($clientId = '') {
-
+    public function signUp($clientId = '')
+    {
         //save new user
-        $user = new $this->users;
+        $user = new $this->users();
 
         //data
         $user->clientid = $clientId;
         $user->password = Hash::make(request('password'));
         $user->type = 'client';
         $user->email = request('email');
+        $user->phone = request('phone');
         $user->first_name = request('first_name');
         $user->last_name = request('last_name');
+        $user->level = 'free';
         $user->role_id = 2;
         $user->creatorid = 0;
         $user->account_owner = 'yes';
+        $word = Words::inRandomOrder()->first();
+        $user->group_keyword = $word->word;
 
         //notification settings
-        $user->notifications_new_project = config('settings.default_notifications_client.notifications_new_project');
-        $user->notifications_projects_activity = config('settings.default_notifications_client.notifications_projects_activity');
-        $user->notifications_billing_activity = config('settings.default_notifications_client.notifications_billing_activity');
-        $user->notifications_tasks_activity = config('settings.default_notifications_client.notifications_tasks_activity');
-        $user->notifications_tickets_activity = config('settings.default_notifications_client.notifications_tickets_activity');
-        $user->notifications_system = config('settings.default_notifications_client.notifications_system');
+        $user->notifications_new_project = config(
+            'settings.default_notifications_client.notifications_new_project'
+        );
+        $user->notifications_projects_activity = config(
+            'settings.default_notifications_client.notifications_projects_activity'
+        );
+        $user->notifications_billing_activity = config(
+            'settings.default_notifications_client.notifications_billing_activity'
+        );
+        $user->notifications_tasks_activity = config(
+            'settings.default_notifications_client.notifications_tasks_activity'
+        );
+        $user->notifications_tickets_activity = config(
+            'settings.default_notifications_client.notifications_tickets_activity'
+        );
+        $user->notifications_system = config(
+            'settings.default_notifications_client.notifications_system'
+        );
 
         //save
         if ($user->save()) {
             return $user;
         } else {
-            Log::error("record could not be saved - database error", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be saved - database error', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
     }
@@ -359,11 +479,19 @@ class UserRepository {
      * @param int $id user id
      * @return bool
      */
-    public function update($id) {
-
+    public function update($id)
+    {
         //get the user
-        if (!$user = $this->users->find($id)) {
-            Log::error("record could not be found", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'user_id' => $id ?? '']);
+        if (!($user = $this->users->find($id))) {
+            Log::error('record could not be found', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+                'user_id' => $id ?? '',
+            ]);
             return false;
         }
 
@@ -385,7 +513,8 @@ class UserRepository {
         }
 
         //dashboard access
-        $user->dashboard_access = (request('dashboard_access') == 'on') ? 'yes' : 'no';
+        $user->dashboard_access =
+            request('dashboard_access') == 'on' ? 'yes' : 'no';
 
         //optional
         if (request('password') != '') {
@@ -405,7 +534,14 @@ class UserRepository {
         if ($user->save()) {
             return true;
         } else {
-            Log::error("record could not be saved - database error", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be saved - database error', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
     }
@@ -416,8 +552,8 @@ class UserRepository {
      * @param string $searchterm
      * @return array
      */
-    public function autocompleteNames($type = '', $searchterm = '') {
-
+    public function autocompleteNames($type = '', $searchterm = '')
+    {
         //validation
         if ($searchterm == '') {
             return [];
@@ -432,7 +568,9 @@ class UserRepository {
             $query->where('type', '=', $type);
         }
 
-        $query->whereRaw("CONCAT_WS(' ', first_name, last_name) LIKE '%$searchterm%'");
+        $query->whereRaw(
+            "CONCAT_WS(' ', first_name, last_name) LIKE '%$searchterm%'"
+        );
 
         //return
         return $query->get();
@@ -444,8 +582,8 @@ class UserRepository {
      * @param string $searchterm
      * @return array
      */
-    public function autocompleteEmail($type = '', $searchterm = '') {
-
+    public function autocompleteEmail($type = '', $searchterm = '')
+    {
         //validation
         if ($searchterm == '') {
             return [];
@@ -454,7 +592,7 @@ class UserRepository {
         //start
         $query = $this->users->newQuery();
 
-        $query->selectRaw("email AS value, id");
+        $query->selectRaw('email AS value, id');
 
         //filter
         if ($type != '') {
@@ -471,8 +609,8 @@ class UserRepository {
      * get all team members who can receive estimate emails
      * @return object
      */
-    public function mailingListTeamEstimates($notification_type = '') {
-
+    public function mailingListTeamEstimates($notification_type = '')
+    {
         //start query
         $query = $this->users->newQuery();
         $query->where('type', '=', 'team');
@@ -484,7 +622,10 @@ class UserRepository {
 
         //email notification
         if ($notification_type == 'app') {
-            $query->whereIn('notifications_billing_activity', ['yes', 'yes_email']);
+            $query->whereIn('notifications_billing_activity', [
+                'yes',
+                'yes_email',
+            ]);
         }
 
         //has permissions to view estimates
@@ -493,9 +634,7 @@ class UserRepository {
         });
 
         //with roles
-        $query->with([
-            'role',
-        ]);
+        $query->with(['role']);
 
         //get the users
         $users = $query->get();
@@ -508,8 +647,8 @@ class UserRepository {
      * get all team members who can receive invoice & payments emails
      * @return object
      */
-    public function mailingListInvoices($notification_type = '') {
-
+    public function mailingListInvoices($notification_type = '')
+    {
         //start query
         $query = $this->users->newQuery();
         $query->where('type', '=', 'team');
@@ -521,7 +660,10 @@ class UserRepository {
 
         //email notification
         if ($notification_type == 'app') {
-            $query->whereIn('notifications_billing_activity', ['yes', 'yes_email']);
+            $query->whereIn('notifications_billing_activity', [
+                'yes',
+                'yes_email',
+            ]);
         }
 
         //has permissions to view invoices and payments
@@ -530,9 +672,7 @@ class UserRepository {
         });
 
         //with roles
-        $query->with([
-            'role',
-        ]);
+        $query->with(['role']);
 
         //get the users
         $users = $query->get();
@@ -545,8 +685,8 @@ class UserRepository {
      * get all team members who can receive subscription emails
      * @return object
      */
-    public function mailingListSubscriptions($notification_type = '') {
-
+    public function mailingListSubscriptions($notification_type = '')
+    {
         //start query
         $query = $this->users->newQuery();
         $query->where('type', '=', 'team');
@@ -558,7 +698,10 @@ class UserRepository {
 
         //ap notification
         if ($notification_type == 'app') {
-            $query->whereIn('notifications_billing_activity', ['yes', 'yes_email']);
+            $query->whereIn('notifications_billing_activity', [
+                'yes',
+                'yes_email',
+            ]);
         }
 
         //has permissions to view subscriptions
@@ -567,9 +710,7 @@ class UserRepository {
         });
 
         //with roles
-        $query->with([
-            'role',
-        ]);
+        $query->with(['role']);
 
         //get the users
         $users = $query->get();
@@ -586,10 +727,17 @@ class UserRepository {
      * @param string $user_type return all users or just the primary user (all|owner)
      * @return array
      */
-    public function getClientUsers($client_id = '', $user_type = 'all', $results = 'ids') {
-
+    public function getClientUsers(
+        $client_id = '',
+        $user_type = 'all',
+        $results = 'ids'
+    ) {
         //validation
-        if (!is_numeric($client_id) || !in_array($results, ['ids', 'collection']) || !in_array($user_type, ['all', 'owner'])) {
+        if (
+            !is_numeric($client_id) ||
+            !in_array($results, ['ids', 'collection']) ||
+            !in_array($user_type, ['all', 'owner'])
+        ) {
             return false;
         }
 
@@ -606,9 +754,7 @@ class UserRepository {
         }
 
         //with roles
-        $query->with([
-            'role',
-        ]);
+        $query->with(['role']);
 
         //get the users
         $users = $query->get();
@@ -632,16 +778,14 @@ class UserRepository {
      * @param string $results the result return type (ids|collection)
      * @return object
      */
-    public function getTeamMembers($results = 'collection') {
-
+    public function getTeamMembers($results = 'collection')
+    {
         //start query
         $query = $this->users->newQuery();
         $query->where('type', '=', 'team');
 
         //with roles
-        $query->with([
-            'role',
-        ]);
+        $query->with(['role']);
 
         //get the users
         $users = $query->get();
@@ -665,17 +809,15 @@ class UserRepository {
      * @param string $results the result return type (ids|collection)
      * @return object
      */
-    public function getAdminUsers($results = 'collection') {
-
+    public function getAdminUsers($results = 'collection')
+    {
         //start query
         $query = $this->users->newQuery();
         $query->where('type', '=', 'team');
         $query->where('role_id', '=', 1);
 
         //with roles
-        $query->with([
-            'role',
-        ]);
+        $query->with(['role']);
 
         //get the users
         $users = $query->get();
@@ -699,10 +841,17 @@ class UserRepository {
      * @param numeric $client_id client did
      * @return object client model object
      */
-    public function getClientAccountOwner($client_id = '') {
-
+    public function getClientAccountOwner($client_id = '')
+    {
         if (!is_numeric($client_id)) {
-            Log::error("validation error - invalid params", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('validation error - invalid params', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
 
@@ -720,7 +869,6 @@ class UserRepository {
         $users = $query->take(1)->get();
 
         return $users->first();
-
     }
 
     /**
@@ -728,11 +876,19 @@ class UserRepository {
      * @param int $id record id
      * @return mixed bool or id of record
      */
-    public function updateAvatar($id) {
-
+    public function updateAvatar($id)
+    {
         //get the user
-        if (!$user = $this->users->find($id)) {
-            Log::error("record could not be found", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'user_id' => $id ?? '']);
+        if (!($user = $this->users->find($id))) {
+            Log::error('record could not be found', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+                'user_id' => $id ?? '',
+            ]);
             return false;
         }
 
@@ -744,7 +900,14 @@ class UserRepository {
         if ($user->save()) {
             return true;
         } else {
-            Log::error("record could not be saved - database error", ['process' => '[userRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('record could not be saved - database error', [
+                'process' => '[userRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
     }
@@ -755,11 +918,18 @@ class UserRepository {
      * @param int $new_owner_id the user to set as new owner
      * @return object
      */
-    public function updateAccountOwner($client_id = '', $new_owner_id = '') {
-
+    public function updateAccountOwner($client_id = '', $new_owner_id = '')
+    {
         //validation
         if (!is_numeric($client_id) || !is_numeric($new_owner_id)) {
-            Log::error("validation error - invalid params", ['process' => '[UserRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error('validation error - invalid params', [
+                'process' => '[UserRepository]',
+                config('app.debug_ref'),
+                'function' => __FUNCTION__,
+                'file' => basename(__FILE__),
+                'line' => __LINE__,
+                'path' => __FILE__,
+            ]);
             return false;
         }
 
@@ -774,5 +944,4 @@ class UserRepository {
         $query->where('id', $new_owner_id);
         $query->update(['account_owner' => 'yes']);
     }
-
 }
