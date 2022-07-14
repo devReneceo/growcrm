@@ -10,6 +10,7 @@
 namespace App\Http\Controllers;
 use Stripe;
 use App\Models\PaymentSession;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Payment;
 use Illuminate\Http\Request;
@@ -158,10 +159,6 @@ class StripeController extends Controller
     {
         \Stripe\Stripe::setApiKey(env('STRP_SECRET'));
         $session = \Stripe\Checkout\Session::retrieve($request->session_id, []);
-
-        echo '<pre>';
-        print_r($session);
-        die();
         $payment = PaymentSession::where('session_id', $request->session_id)
             ->select('id', 'session_creatorid')
             ->get();
@@ -170,7 +167,7 @@ class StripeController extends Controller
                 PaymentSession::where('id', $p->id)->update([
                     'session_status' => $session->status,
                     'payment_status' => $session->payment_status,
-                    'session_updated' => date(' yyyy-mm-dd'),
+                    'session_updated' => date('yyyy-mm-dd'),
                 ]);
 
                 $paymentcount = Payment::where(
@@ -189,8 +186,25 @@ class StripeController extends Controller
                         'payment_amount' => $session->amount_total / 100,
                         'payment_invoiceid' => $session->payment_intent,
                         'payment_gateway' => 'stripe',
+                        'payment_subscriptionid' => $session->subscription,
                     ]);
                 }
+
+                Subscription::create([
+                    'subscription_gateway_id' => $session->subscription,
+                    'subscription_clientid' => $p->session_creatorid,
+                    'subscription_creatorid' => $p->session_creatorid,
+                    'subscription_gateway_product' =>
+                        '9dll Montly subscription',
+                    'subscription_gateway_price' => '$9.00 dll',
+                    'subscription_gateway_product_name' => 'Associate Leads',
+                    'subscription_gateway_period' => 'Monhtly',
+                    'subscription_date_started' => date('yyyy-mm-dd'),
+                    'subscription_date_ended' => $session->expires_at,
+                    'subscription_subtotal' => $session->amount_total / 100,
+                    'subscription_final_amount' => $session->amount_total / 100,
+                    'subscription_status' => $session->status,
+                ]);
 
                 if ($session->payment_status == 'paid') {
                     User::where('id', $p->session_creatorid)->update([
