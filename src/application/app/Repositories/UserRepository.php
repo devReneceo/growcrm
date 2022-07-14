@@ -10,6 +10,7 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use App\Models\Words;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Log;
