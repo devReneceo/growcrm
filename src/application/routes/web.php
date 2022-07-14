@@ -5,7 +5,7 @@ Route::get('test', 'Test@index');
 Route::post('test', 'Test@index');
 Route::any('register', 'Register@index');
 Route::post('newUser', 'Register@add');
-Route::any('newLeadAssociate', 'Register@leadAssociate');
+Route::any('becomeAssociate', 'Register@leadAssociate');
 //HOME PAGE
 Route::any('/', function () {
     return redirect('/home');
