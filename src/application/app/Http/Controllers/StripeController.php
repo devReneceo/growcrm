@@ -208,20 +208,20 @@ class StripeController extends Controller
 
                 if ($session->payment_status == 'paid') {
                     User::where('id', $p->session_creatorid)->update([
-                        'level' => 'premium',
+                        'lead_associate' => 1,
                     ]);
-                    return view('stripe/stripe', [
+                    return view('register/associate', [
                         'status' => 'success',
                         'nowIsPremium' => 'yes',
                     ]);
                 }
-                return view('stripe/stripe', [
+                return view('register/associate', [
                     'status' => 'error',
                     'message' => 'status not paid',
                     'session' => $session,
                 ]);
             } catch (\Throwable $th) {
-                return view('stripe/stripe', [
+                return view('register/associate', [
                     'status' => 'error',
                     'message' => 'Error processing your Premium access.',
                     'payment_status' => $session->payment_status,
