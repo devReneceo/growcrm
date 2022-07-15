@@ -139,7 +139,8 @@ class StripeController extends Controller
             'customer_email' => $request->userEmail,
             'mode' => 'subscription',
             'success_url' =>
-                'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/subscriptionSuccess?session_id={CHECKOUT_SESSION_ID}',
+                'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/subscriptionSuccess?session_id={CHECKOUT_SESSION_ID}&leadAssociate=' .
+                $request->leadAssociate,
             'cancel_url' => 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app',
         ]);
 
@@ -207,9 +208,20 @@ class StripeController extends Controller
                 ]);
 
                 if ($session->payment_status == 'paid') {
-                    User::where('id', $p->session_creatorid)->update([
-                        'lead_associate' => 1,
-                    ]);
+                    $data = [
+                        'associate' => 1,
+                    ];
+                    if (
+                        $request->leadAssociate != '' &&
+                        $request->leadAssociate != null
+                    ) {
+                        $data = [
+                            'associate' => 1,
+                            'lead_associate' => $request->leadAssociate,
+                        ];
+                    }
+
+                    User::where('id', $p->session_creatorid)->update($data);
                     return view('register/associate', [
                         'status' => 'success',
                         'nowIsPremium' => 'yes',
