@@ -128,7 +128,7 @@
       
 @if($isLogedIn)    
 
-    @if(auth()->user()->lead != 1)    
+    @if(auth()->user()->associate != 1)    
     <div>
     <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}} </h1>
         <h3> Become an associate with $9 Dll per month</h3>
@@ -136,11 +136,11 @@
     </div>
 @endif
 
-    @if(auth()->user()->lead == 1)    
+    @if(auth()->user()->associate == 1)    
     <div>
     <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}}  You already are associate with us </h1>
         <h3> Become an associate with $9 Dll per month</h3>
-        <a class="btn btn-primary" href="/leads"> Got to my leads </p>
+        <a class="btn btn-primary" href="/leads"> Got to my leads </a>
     </div>
     @endif
 
