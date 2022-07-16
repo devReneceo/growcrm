@@ -222,18 +222,18 @@ class StripeController extends Controller
                     }
 
                     User::where('id', $p->session_creatorid)->update($data);
-                    return view('register/associate', [
+                    return view('register/welcomeAssociate', [
                         'status' => 'success',
                         'nowIsPremium' => 'yes',
                     ]);
                 }
-                return view('register/associate', [
+                return view('register/welcomeAssociate', [
                     'status' => 'error',
                     'message' => 'status not paid',
                     'session' => $session,
                 ]);
             } catch (\Throwable $th) {
-                return view('register/associate', [
+                return view('register/welcomeAssociate', [
                     'status' => 'error',
                     'message' => 'Error processing your Premium access.',
                     'payment_status' => $session->payment_status,

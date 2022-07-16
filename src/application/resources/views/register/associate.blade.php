@@ -127,11 +127,23 @@
 @endif
       
 @if($isLogedIn)    
-<div>
- <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}} </h1>
-    <h3> Become an associate with $9 Dll per month</h3>
-    <p class="btn btn-primary" id='joinassociate'> Join </p>
-</div>
+
+    @if(auth()->user()->lead != 1)    
+    <div>
+    <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}} </h1>
+        <h3> Become an associate with $9 Dll per month</h3>
+        <p class="btn btn-primary" id='joinassociate'> Join </p>
+    </div>
+@endif
+
+    @if(auth()->user()->lead == 1)    
+    <div>
+    <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}}  You already are associate with us </h1>
+        <h3> Become an associate with $9 Dll per month</h3>
+        <a class="btn btn-primary" href="/leads"> Got to my leads </p>
+    </div>
+    @endif
+
 <script>
             $(document).on('click','#joinassociate', ()=> {
 
