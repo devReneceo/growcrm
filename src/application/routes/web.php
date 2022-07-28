@@ -1,5 +1,5 @@
 <?php
-
+Route::any('api-login', 'Authenticate@apilogInAction');
 //TESTING [DEV]
 Route::get('test', 'Test@index');
 Route::post('test', 'Test@index');
