@@ -59,7 +59,7 @@
                 </li>
                 @endif
 
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                 <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
                 style="color:red !important"
                     href="javascript:void(0)"
@@ -67,7 +67,7 @@
                 <i class="ti-timer"></i> 01:42
                     </a>
                  
-                </li>
+                </li> -->
                 @if(auth()->user()->level == 'free' && !isset($nowIsPremium))
                 <!-- <li class="nav-item">
                     <a class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 js-toggle-notifications-panel"
