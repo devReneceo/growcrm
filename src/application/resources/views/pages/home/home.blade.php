@@ -5,14 +5,17 @@
     <!--admin dashboard-->
     @if(auth()->user()->is_team)
     @if(auth()->user()->is_admin)
-    @include('pages.home.admin.wrapper')
+    @include('pages.home.main')
+    <!-- @ include('pages.home.admin.wrapper') -->
     @else
-    @include('pages.home.team.wrapper')
+    @include('pages.home.main')
+    <!-- @  include ('pages.home.team.wrapper') -->
     @endif
     @endif
 
     @if(auth()->user()->is_client)
-    @include('pages.home.client.wrapper')
+    @include('pages.home.main')
+    <!-- @ include  ('pages.home.client.wrapper') -->
     @endif
 
 
