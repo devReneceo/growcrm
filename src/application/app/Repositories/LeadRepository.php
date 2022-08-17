@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Log;
+use Illuminate\Support\Facades\Auth;
 
 class LeadRepository
 {
@@ -41,6 +42,8 @@ class LeadRepository
         $leads = $this->leads->newQuery();
 
         //joins
+        //Joel Dorado
+        $user = auth()->user();
         $leads->leftJoin(
             'categories',
             'categories.category_id',
@@ -244,7 +247,8 @@ class LeadRepository
                 $query->whereIn('tag_title', request('filter_tags'));
             });
         }
-
+        // Joel Dorado
+        $leads->Where('lead_creatorid', $user->id);
         //search: various client columns and relationships (where first, then wherehas)
         if (request()->filled('search_query') || request()->filled('query')) {
             $leads->where(function ($query) {
