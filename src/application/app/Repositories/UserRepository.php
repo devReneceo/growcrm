@@ -439,6 +439,20 @@ class UserRepository
         $word = Words::inRandomOrder()->first();
         $user->group_keyword = $word->word;
 
+        $isAssociate = false;
+        if (
+            request('lead_associate') != '' &&
+            request('lead_associate') != null
+        ) {
+            $associate = User::where('id', request('lead_associate'))
+                ->pluck('associate')
+                ->first();
+            if ($associate != '') {
+                $isAssociate = true;
+                $user->lead_associate = request('lead_associate');
+            }
+        }
+
         //notification settings
         $user->notifications_new_project = config(
             'settings.default_notifications_client.notifications_new_project'
@@ -461,6 +475,27 @@ class UserRepository
 
         //save
         if ($user->save()) {
+            if (
+                request('lead_associate') != '' &&
+                request('lead_associate') != null &&
+                $isAssociate == true
+            ) {
+                $user->lead_associate = request('lead_associate');
+                // add lead
+                $lead = new Lead();
+                $lead->lead_title = 'Hit 60 new ' . request('first_name');
+                $lead->lead_firstname = request('first_name');
+                $lead->lead_lastname = request('last_name');
+                $lead->lead_phone = request('phone');
+                $lead->lead_email = request('email');
+                $lead->lead_status = 1;
+                $lead->lead_categoryid = 3;
+                $lead->lead_country = 'USA';
+                $lead->lead_company_name = 'HIT 60';
+                $lead->lead_creatorid = request('lead_associate');
+                $lead->user_id = $user->id;
+                $lead->save();
+            }
             return $user;
         } else {
             Log::error('record could not be saved - database error', [

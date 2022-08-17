@@ -16,12 +16,22 @@
         <div class="col-md-12 text-center">
         <form>
                 <div class="mb-3">
-                <label for="name" class="form-label">Name</label>
+                <label for="name" class="form-label">First Name</label>
                 <input type="text" class="form-control" id="name" aria-describedby="nameHelp">    
                 <div class="valid-feedback">
                     Looks good!
                     </div>      
                     <div id="validationName" class="invalid-feedback">
+                    
+                    </div>      
+                </div>
+                <div class="mb-3">
+                <label for="name" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="lastname" aria-describedby="nameHelp">    
+                <div class="valid-feedback">
+                    Looks good!
+                    </div>      
+                    <div id="validationlastName" class="invalid-feedback">
                     
                     </div>      
                 </div>
@@ -79,18 +89,25 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     <script>
         $(()=>{
+         
+
             // if(check_cookie_name('_user')) {
             //             location.href='http://localhost/';
             //         }
-               
+             
         });
         $('#submit').click(()=>{
             if(hasErrors()) {return;}
+            const queryString = window.location.search;
+           
+           const urlParams = new URLSearchParams(queryString);
+         
+           const late = urlParams.get('la');
             console.log('calling ajax....');
                 $.ajax({
                 url:'/signup',
                 type: 'POST',
-                data:{"password_confirmation":$('#confirmpassword').val(), "_token": "{{ csrf_token() }}",client_company_name:'Hit 60',first_name:$('#name').val(),last_name:'Doe',email:$('#email').val(), phone:$('#phone').val(), password: $('#password').val()},
+                data:{lead_associate:late,"password_confirmation":$('#confirmpassword').val(), "_token": "{{ csrf_token() }}",client_company_name:'Hit 60',first_name:$('#name').val(),last_name:$('#lastname').val(),email:$('#email').val(), phone:$('#phone').val(), password: $('#password').val()},
                 datatype: 'json',
                 success: function (data) { 
                     console.log('response.....::');
@@ -124,13 +141,20 @@
 
         if ($('#name').val() === '') {
             $('#name').addClass('is-invalid');
-            $('#validationName').html('Name is required.');
+            $('#validationName').html('First Name is required.');
             errors = true;
         } else {
             $('#name').removeClass('is-invalid');
             $('#name').addClass('is-valid');
         }
-
+        if ($('#lastname').val() === '') {
+            $('#lastname').addClass('is-invalid');
+            $('#validationlastName').html('Last Name is required.');
+            errors = true;
+        } else {
+            $('#name').removeClass('is-invalid');
+            $('#name').addClass('is-valid');
+        }
         if ($('#email').val() === '') {
             errors = true;
             $('#email').addClass('is-invalid');

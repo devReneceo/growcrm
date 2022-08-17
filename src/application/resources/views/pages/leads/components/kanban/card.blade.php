@@ -1,9 +1,16 @@
 @foreach($board['leads'] as $lead)
 <!--each card-->
-<div class="kanban-card show-modal-button reset-card-modal-form js-ajax-ux-request" data-toggle="modal"
+<div class="kanban-card show-modal-button reset-card-modal-form js-ajax-ux-request {{$lead->current_lead_level}}" 
+
+     data-toggle="modal"
     data-target="#cardModal" data-url="{{ urlResource('/leads/'.$lead->lead_id) }}" data-lead-id="{{ $lead->lead_id }}"
     data-loading-target="main-top-nav-bar" id="card_lead_{{ $lead->lead_id }}">
-    <div class="x-title wordwrap" id="kanban_lead_title_{{ $lead->lead_id }}">{{ $lead->lead_title }}
+
+
+
+    <div class="x-title wordwrap" id="kanban_lead_title_{{ $lead->lead_id }}">
+        <!-- {  { $lead->lead_title }  } -->
+        {{$lead->lead_firstname }} {{$lead->lead_lastname }} 
         <span class="x-action-button" id="card-action-button-{{ $lead->lead_id }}" data-toggle="dropdown"
             aria-haspopup="true" aria-expanded="false"><i class="mdi mdi-dots-vertical"></i></span>
         <div class="dropdown-menu dropdown-menu-small dropdown-menu-right js-stop-propagation"
@@ -64,28 +71,30 @@
     </div>
     <div class="x-meta">
         <!--name-->
-        <label class="label label-outline-default p-t-3 p-b-3 p-r-8 p-l-8">{{ $lead->lead_firstname }}
-            {{ $lead->lead_lastname }}</label>
+        <label class="label label-outline-default p-t-3 p-b-3 p-r-8 p-l-8"> {{$lead->created}} </label>
+
+        <!--  $lead->lead_firstname }}
+             $lead->lead_lastname }} -->
         <!--value-->
         @if(config('system.settings_leads_kanban_value') == 'show')
-        <div><label
+        <!-- <div><label
                 class="label label-light-info p-t-3 p-b-3 p-r-8 p-l-8">{{ runtimeMoneyFormat($lead->lead_value) }}</label>
-        </div>
+        </div> -->
         @endif
 
-        <!--telephone-->
+        <!--telephone {   { cleanLang(__('lang.telephone'))     -->
         @if(config('system.settings_leads_kanban_telephone') == 'show')
-        <span class="wordwrap"><strong>{{ cleanLang(__('lang.telephone')) }}:</strong>
+        <span class="wordwrap {{$lead->current_lead_level}}"><strong>Mobile:</strong>
             {{ $lead->lead_phone ?? '---' }}</span>
         @endif
         <!--date created-->
         @if(config('system.settings_leads_kanban_date_created') == 'show')
-        <span><strong>{{ cleanLang(__('lang.created')) }}:</strong> {{ runtimeDate($lead->lead_created) }}</span>
+        <!-- <span><strong>{{ cleanLang(__('lang.created')) }}:</strong> {{ runtimeDate($lead->lead_created) }}</span> -->
         @endif
         <!--date contacted-->
         @if(config('system.settings_leads_kanban_date_contacted') == 'show')
-        <span><strong>{{ cleanLang(__('lang.contacted')) }}:</strong>
-            {{ runtimeDate($lead->lead_last_contacted ) }}</span>
+        <!-- <span><strong>  { cleanLang(__('lang.contacted')) }}:</strong>
+              runtimeDate(    $lead->lead_last_contacted ) }}</span> -->
         @endif
         <!--category-->
         @if(config('system.settings_leads_kanban_category') == 'show')
@@ -93,7 +102,7 @@
         @endif
         <!--email-->
         @if(config('system.settings_leads_kanban_email') == 'show')
-        <span class="wordwrap"><strong>{{ cleanLang(__('lang.email')) }}:</strong>
+        <span class="wordwrap {{$lead->current_lead_level}}"><strong>{{ cleanLang(__('lang.email')) }}:</strong>
             {{ $lead->lead_email ?? '---' }}</span>
         @endif
         <!--source-->
@@ -118,14 +127,14 @@
 
             <!--created by you-->
             @if($lead->lead_creatorid == auth()->user()->id)
-            <span class="x-icon text-info" data-toggle="tooltip" title="@lang('lang.you_created_this_lead')"
+            <span class="x-icon text-info {{$lead->current_lead_level}}" data-toggle="tooltip" title="@lang('lang.you_created_this_lead')"
                 data-placement="top"><i class="mdi mdi-account-circle"></i></span>
             @endif
 
 
             <!--converted-->
             @if($lead->lead_converted == 'yes')
-            <span class="x-icon text-success"><i class="mdi mdi-star" data-toggle="tooltip"
+            <span class="x-icon text-success {{$lead->current_lead_level}}"><i class="mdi mdi-star" data-toggle="tooltip"
                     title="{{ cleanLang(__('lang.customer')) }}"></i></span>
             @endif
 
@@ -159,12 +168,17 @@
 
         </div>
         <div class="col-6 x-assigned">
-            @foreach($lead->assigned as $user)
-            <img src="{{ getUsersAvatar($user->avatar_directory, $user->avatar_filename) }}" data-toggle="tooltip"
-                title="" data-placement="top" alt="{{ $user->first_name }}" class="img-circle avatar-xsmall"
-                data-original-title="{{ $user->first_name }}">
-            @endforeach
+         
         </div>
+        
     </div>
 </div>
 @endforeach
+
+
+<style>
+    .premium, .premium strong{
+            background:#dc3545;
+            color:#fff !important;
+    }
+</style>

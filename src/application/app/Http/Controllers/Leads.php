@@ -66,8 +66,8 @@ use Image;
 use Intervention\Image\Exception\NotReadableException;
 use Validator;
 
-class Leads extends Controller {
-
+class Leads extends Controller
+{
     /**
      * The lead repository instance.
      */
@@ -152,8 +152,8 @@ class Leads extends Controller {
         EventTrackingRepository $trackingrepo,
         EmailerRepository $emailerrepo,
         Lead $leadmodel,
-        CustomFieldsRepository $customrepo) {
-
+        CustomFieldsRepository $customrepo
+    ) {
         //parent
         parent::__construct();
 
@@ -198,10 +198,7 @@ class Leads extends Controller {
             'cloneStore',
         ]);
 
-        $this->middleware('leadsMiddlewareCreate')->only([
-            'create',
-            'store',
-        ]);
+        $this->middleware('leadsMiddlewareCreate')->only(['create', 'store']);
 
         $this->middleware('leadsMiddlewareShow')->only([
             'show',
@@ -266,18 +263,14 @@ class Leads extends Controller {
             'toggleChecklistStatus',
         ]);
 
-        $this->middleware('leadsMiddlewareDestroy')->only([
-            'destroy',
-        ]);
+        $this->middleware('leadsMiddlewareDestroy')->only(['destroy']);
 
         //only needed for the [action] methods
         $this->middleware('leadsMiddlewareBulkEdit')->only([
             'changeCategoryUpdate',
         ]);
 
-        $this->middleware('leadsMiddlewareAssign')->only([
-            'updateAssigned',
-        ]);
+        $this->middleware('leadsMiddlewareAssign')->only(['updateAssigned']);
 
         $this->middleware('leadsMiddlewareCloning')->only([
             'cloneTask',
@@ -289,8 +282,8 @@ class Leads extends Controller {
      * Display a listing of leads
      * @return \Illuminate\Http\Response
      */
-    public function index() {
-
+    public function index()
+    {
         if (auth()->user()->pref_view_leads_layout == 'list') {
             $payload = $this->indexList();
             return new IndexListResponse($payload);
@@ -304,8 +297,8 @@ class Leads extends Controller {
      * Prepare the listing of leads (list view)
      * @return array
      */
-    public function indexList() {
-
+    public function indexList()
+    {
         //get leads
         $leads = $this->leadrepo->search();
 
@@ -346,8 +339,8 @@ class Leads extends Controller {
      * Prepare the listing of leads (kanban view)
      * @return blade view | ajax view
      */
-    public function indexKanban() {
-
+    public function indexKanban()
+    {
         $boards = $this->leadBoards();
 
         //basic page settings
@@ -355,7 +348,6 @@ class Leads extends Controller {
 
         //page setting for embedded view
         if (request('source') == 'ext') {
-
             $page = $this->pageSettings('ext', []);
         }
         //get all categories (type: lead) - for filter panel
@@ -382,12 +374,14 @@ class Leads extends Controller {
      * process/group leads into boards
      * @return object
      */
-    private function leadBoards() {
-
-        $statuses = \App\Models\LeadStatus::orderBy('leadstatus_position', 'asc')->get();
+    private function leadBoards()
+    {
+        $statuses = \App\Models\LeadStatus::orderBy(
+            'leadstatus_position',
+            'asc'
+        )->get();
 
         foreach ($statuses as $status) {
-
             request()->merge([
                 'filter_single_lead_status' => $status->leadstatus_id,
                 'query_type' => 'kanban',
@@ -404,7 +398,15 @@ class Leads extends Controller {
 
             //apply some permissions
             if ($leads) {
-                foreach ($leads as $lead) {
+                foreach ($leads as $k => $lead) {
+                    // Joel Dorado
+                    $user_level = \App\Models\User::where('id', $lead->user_id)
+                        ->pluck('level')
+                        ->first();
+                    if ($user_level !== '') {
+                        $leads[$k]['current_lead_level'] = $user_level;
+                    }
+
                     $this->applyPermissions($lead);
                 }
             }
@@ -419,9 +421,13 @@ class Leads extends Controller {
             //initial loadmore button
             if ($leads->currentPage() < $leads->lastPage()) {
                 $boards[$status->leadstatus_id]['load_more'] = '';
-                $boards[$status->leadstatus_id]['load_more_url'] = loadMoreButtonUrl($leads->currentPage() + 1, $status->leadstatus_id);
+                $boards[$status->leadstatus_id][
+                    'load_more_url'
+                ] = loadMoreButtonUrl(
+                    $leads->currentPage() + 1,
+                    $status->leadstatus_id
+                );
             } else {
-
                 $boards[$status->leadstatus_id]['load_more'] = 'hidden';
                 $boards[$status->leadstatus_id]['load_more_url'] = '';
             }
@@ -429,8 +435,8 @@ class Leads extends Controller {
             $boards[$status->leadstatus_id]['name'] = $status->leadstatus_title;
             $boards[$status->leadstatus_id]['id'] = $status->leadstatus_id;
             $boards[$status->leadstatus_id]['leads'] = $leads;
-            $boards[$status->leadstatus_id]['color'] = $status->leadstatus_color;
-
+            $boards[$status->leadstatus_id]['color'] =
+                $status->leadstatus_color;
         }
 
         return $boards;
@@ -441,8 +447,8 @@ class Leads extends Controller {
      * @param object CategoryRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function create(CategoryRepository $categoryrepo) {
-
+    public function create(CategoryRepository $categoryrepo)
+    {
         //lead categories
         $categories = $categoryrepo->get('lead');
 
@@ -486,8 +492,8 @@ class Leads extends Controller {
      * @param model client model - only when showing the edit modal form
      * @return collection
      */
-    public function getCustomFields($obj = '') {
-
+    public function getCustomFields($obj = '')
+    {
         //set typs
         request()->merge([
             'customfields_type' => 'leads',
@@ -515,23 +521,28 @@ class Leads extends Controller {
      * @param object LeadAssignedRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function store(LeadStoreUpdate $request, LeadAssignedRepository $assignedrepo) {
-
+    public function store(
+        LeadStoreUpdate $request,
+        LeadAssignedRepository $assignedrepo
+    ) {
         //custom field validation
         if ($messages = $this->customFieldValidationFailed()) {
             abort(409, $messages);
         }
 
         //get the last row (order by position - desc)
-        if ($last = $this->leadmodel::orderBy('lead_position', 'desc')->first()) {
-            $position = $last->lead_position + config('settings.db_position_increment');
+        if (
+            $last = $this->leadmodel::orderBy('lead_position', 'desc')->first()
+        ) {
+            $position =
+                $last->lead_position + config('settings.db_position_increment');
         } else {
             //default position increment
             $position = config('settings.db_position_increment');
         }
 
         //create the lead
-        if (!$lead_id = $this->leadrepo->create($position)) {
+        if (!($lead_id = $this->leadrepo->create($position))) {
             abort(409);
         }
 
@@ -574,14 +585,19 @@ class Leads extends Controller {
          * record assignment events and send emails
          * ----------------------------------------------*/
         foreach ($assigned_users as $assigned_user_id) {
-            if ($assigned_user = \App\Models\User::Where('id', $assigned_user_id)->first()) {
-
+            if (
+                $assigned_user = \App\Models\User::Where(
+                    'id',
+                    $assigned_user_id
+                )->first()
+            ) {
                 $data = [
                     'event_creatorid' => auth()->id(),
                     'event_item' => 'assigned',
                     'event_item_id' => '',
                     'event_item_lang' => 'event_assigned_user_to_a_lead',
-                    'event_item_lang_alt' => 'event_assigned_user_to_a_lead_alt',
+                    'event_item_lang_alt' =>
+                        'event_assigned_user_to_a_lead_alt',
                     'event_item_content' => __('lang.assigned'),
                     'event_item_content2' => $assigned_user_id,
                     'event_item_content3' => $assigned_user->first_name,
@@ -593,13 +609,18 @@ class Leads extends Controller {
                     'event_clientid' => '',
                     'eventresource_type' => 'lead',
                     'eventresource_id' => $lead->lead_id,
-                    'event_notification_category' => 'notifications_new_assignement',
+                    'event_notification_category' =>
+                        'notifications_new_assignement',
                 ];
                 //record event
                 if ($event_id = $this->eventrepo->create($data)) {
                     //record notification (skip the user creating this event)
                     if ($assigned_user_id != auth()->id()) {
-                        $emailusers = $this->trackingrepo->recordEvent($data, [$assigned_user_id], $event_id);
+                        $emailusers = $this->trackingrepo->recordEvent(
+                            $data,
+                            [$assigned_user_id],
+                            $event_id
+                        );
                     }
                 }
 
@@ -607,8 +628,15 @@ class Leads extends Controller {
                  * send email [assignment]
                  * ----------------------------------------------*/
                 if ($assigned_user_id != auth()->id()) {
-                    if ($assigned_user->notifications_new_assignement == 'yes_email') {
-                        $mail = new \App\Mail\LeadAssignment($assigned_user, $data, $lead);
+                    if (
+                        $assigned_user->notifications_new_assignement ==
+                        'yes_email'
+                    ) {
+                        $mail = new \App\Mail\LeadAssignment(
+                            $assigned_user,
+                            $data,
+                            $lead
+                        );
                         $mail->build();
                     }
                 }
@@ -647,15 +675,27 @@ class Leads extends Controller {
      * Returns false when all is ok
      * @return \Illuminate\Http\Response
      */
-    public function customFieldValidationFailed() {
-
+    public function customFieldValidationFailed()
+    {
         //custom field validation
-        $fields = \App\Models\CustomField::Where('customfields_type', 'leads')->get();
+        $fields = \App\Models\CustomField::Where(
+            'customfields_type',
+            'leads'
+        )->get();
         $errors = '';
         foreach ($fields as $field) {
-            if ($field->customfields_status == 'enabled' && $field->customfields_standard_form_status == 'enabled' && $field->customfields_required == 'yes') {
+            if (
+                $field->customfields_status == 'enabled' &&
+                $field->customfields_standard_form_status == 'enabled' &&
+                $field->customfields_required == 'yes'
+            ) {
                 if (request($field->customfields_name) == '') {
-                    $errors .= '<li>' . $field->customfields_title . ' - ' . __('lang.is_required') . '</li>';
+                    $errors .=
+                        '<li>' .
+                        $field->customfields_title .
+                        ' - ' .
+                        __('lang.is_required') .
+                        '</li>';
                 }
             }
         }
@@ -682,8 +722,9 @@ class Leads extends Controller {
         LeadAssignedRepository $assignedrepo,
         CommentRepository $commentrepo,
         ChecklistRepository $checklistrepo,
-        AttachmentRepository $attachmentrepo, $id) {
-
+        AttachmentRepository $attachmentrepo,
+        $id
+    ) {
         //get the lead
         $leads = $this->leadrepo->search($id);
 
@@ -751,9 +792,15 @@ class Leads extends Controller {
             ->update(['eventtracking_status' => 'read']);
 
         //get users reminders
-        if ($reminder = \App\Models\Reminder::Where('reminderresource_type', 'lead')
-            ->Where('reminderresource_id', $id)
-            ->Where('reminder_userid', auth()->id())->first()) {
+        if (
+            $reminder = \App\Models\Reminder::Where(
+                'reminderresource_type',
+                'lead'
+            )
+                ->Where('reminderresource_id', $id)
+                ->Where('reminder_userid', auth()->id())
+                ->first()
+        ) {
             $has_reminder = true;
         } else {
             $reminder = [];
@@ -797,16 +844,19 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function edit(CategoryRepository $categoryrepo, $id) {
-
+    public function edit(CategoryRepository $categoryrepo, $id)
+    {
         //nothing here
     }
     /**
      * update a lead in storage.
      * @return \Illuminate\Http\Response
      */
-    public function update(LeadStoreUpdate $request, LeadAssignedRepository $assignedrepo, $id) {
-
+    public function update(
+        LeadStoreUpdate $request,
+        LeadAssignedRepository $assignedrepo,
+        $id
+    ) {
         //update
         if (!$this->leadrepo->update($id)) {
             abort(409);
@@ -862,13 +912,12 @@ class Leads extends Controller {
      * @param object DestroyRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function destroy(DestroyRepository $destroyrepo) {
-
+    public function destroy(DestroyRepository $destroyrepo)
+    {
         //delete each record in the array
-        $allrows = array();
+        $allrows = [];
 
         foreach (request('ids') as $id => $value) {
-
             //only checked items
             if ($value == 'on') {
                 //delete lead
@@ -887,7 +936,6 @@ class Leads extends Controller {
 
         //generate a response
         return new DestroyResponse($payload);
-
     }
 
     /**
@@ -895,7 +943,8 @@ class Leads extends Controller {
      * @param object leads collection of the lead model
      * @return object
      */
-    private function processLeads($leads = '') {
+    private function processLeads($leads = '')
+    {
         //sanity - make sure this is a valid leads object
         if ($leads instanceof \Illuminate\Pagination\LengthAwarePaginator) {
             foreach ($leads as $lead) {
@@ -911,11 +960,10 @@ class Leads extends Controller {
      * @param object lead instance of the lead model
      * @return object
      */
-    private function processLead($lead = '') {
-
+    private function processLead($lead = '')
+    {
         //sanity - make sure this is a valid lead object
         if ($lead instanceof \App\Models\Lead) {
-
             //default values
             $lead->assigned_to_me = false;
             $lead->has_attachments = false;
@@ -930,9 +978,10 @@ class Leads extends Controller {
                 }
             }
 
-            $lead->has_attachments = ($lead->attachments_count > 0) ? true : false;
-            $lead->has_comments = ($lead->comments_count > 0) ? true : false;
-            $lead->has_checklist = ($lead->checklists_count > 0) ? true : false;
+            $lead->has_attachments =
+                $lead->attachments_count > 0 ? true : false;
+            $lead->has_comments = $lead->comments_count > 0 ? true : false;
+            $lead->has_checklist = $lead->checklists_count > 0 ? true : false;
 
             //custom fields
             $lead->fields = $this->getCustomFields($lead);
@@ -944,8 +993,8 @@ class Leads extends Controller {
      * @param object CategoryRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function changeCategory(CategoryRepository $categoryrepo) {
-
+    public function changeCategory(CategoryRepository $categoryrepo)
+    {
         //get all lead categories
         $categories = $categoryrepo->get('lead');
 
@@ -963,17 +1012,19 @@ class Leads extends Controller {
      * @param object CategoryRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function changeCategoryUpdate(CategoryRepository $categoryrepo) {
-
+    public function changeCategoryUpdate(CategoryRepository $categoryrepo)
+    {
         //validate the category exists
-        if (!\App\Models\Category::Where('category_id', request('category'))
-            ->Where('category_type', 'lead')
-            ->first()) {
+        if (
+            !\App\Models\Category::Where('category_id', request('category'))
+                ->Where('category_type', 'lead')
+                ->first()
+        ) {
             abort(409, __('lang.category_not_found'));
         }
 
         //update each lead
-        $allrows = array();
+        $allrows = [];
         foreach (request('ids') as $lead_id => $value) {
             if ($value == 'on') {
                 $lead = \App\Models\Lead::Where('lead_id', $lead_id)->first();
@@ -1004,10 +1055,13 @@ class Leads extends Controller {
      * Show the form for changing a leads status
      * @return \Illuminate\Http\Response
      */
-    public function changeStatus() {
-
+    public function changeStatus()
+    {
         //get the lead
-        $lead = \App\Models\Lead::Where('lead_id', request()->route('lead'))->first();
+        $lead = \App\Models\Lead::Where(
+            'lead_id',
+            request()->route('lead')
+        )->first();
 
         //all available lead statuses
         $statuses = \App\Models\LeadStatus::all();
@@ -1026,10 +1080,13 @@ class Leads extends Controller {
      * change status lead status
      * @return \Illuminate\Http\Response
      */
-    public function changeStatusUpdate() {
-
+    public function changeStatusUpdate()
+    {
         //validate the lead exists
-        $lead = \App\Models\Lead::Where('lead_id', request()->route('lead'))->first();
+        $lead = \App\Models\Lead::Where(
+            'lead_id',
+            request()->route('lead')
+        )->first();
 
         //update the lead
         $lead->lead_status = request('lead_status');
@@ -1039,7 +1096,9 @@ class Leads extends Controller {
         $leads = $this->leadrepo->search(request()->route('lead'));
 
         //clients contacts (needed for left panel - on update)
-        $contacts = \App\Models\User::where('clientid', $lead['lead_clientid'])->where('type', 'client')->get();
+        $contacts = \App\Models\User::where('clientid', $lead['lead_clientid'])
+            ->where('type', 'client')
+            ->get();
 
         //apply permissions
         $this->applyPermissions($leads->first());
@@ -1062,16 +1121,25 @@ class Leads extends Controller {
      * @param object lead instance of the lead model
      * @return \Illuminate\Http\Response
      */
-    private function applyPermissions($lead = '') {
-
+    private function applyPermissions($lead = '')
+    {
         //sanity - make sure this is a valid lead object
         if ($lead instanceof \App\Models\Lead) {
             //edit permissions
-            $lead->permission_edit_lead = $this->leadpermissions->check('edit', $lead);
+            $lead->permission_edit_lead = $this->leadpermissions->check(
+                'edit',
+                $lead
+            );
             //delete permissions
-            $lead->permission_delete_lead = $this->leadpermissions->check('delete', $lead);
+            $lead->permission_delete_lead = $this->leadpermissions->check(
+                'delete',
+                $lead
+            );
             //edit participate
-            $lead->permission_participate = $this->leadpermissions->check('participate', $lead);
+            $lead->permission_participate = $this->leadpermissions->check(
+                'participate',
+                $lead
+            );
         }
     }
 
@@ -1080,8 +1148,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return object
      */
-    public function updateDescription($id) {
-
+    public function updateDescription($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -1107,7 +1175,6 @@ class Leads extends Controller {
         ];
 
         return response()->json($jsondata);
-
     }
 
     /**
@@ -1118,14 +1185,16 @@ class Leads extends Controller {
      * @param int $id client id
      * @return
      */
-    public function attachFiles(Request $request, AttachmentRepository $attachmentrepo, $id) {
-
+    public function attachFiles(
+        Request $request,
+        AttachmentRepository $attachmentrepo,
+        $id
+    ) {
         //validate the lead exists
         $lead = $this->leadmodel::find($id);
 
         //save the file in its own folder in the temp folder
         if ($file = $request->file('file')) {
-
             //defaults
             $file_type = 'file';
 
@@ -1156,14 +1225,27 @@ class Leads extends Controller {
             if (is_array(@getimagesize($file_path))) {
                 $file_type = 'image';
                 try {
-                    $img = Image::make($file_path)->resize(null, 90, function ($constraint) {
+                    $img = Image::make($file_path)->resize(null, 90, function (
+                        $constraint
+                    ) {
                         $constraint->aspectRatio();
                         $constraint->upsize();
                     });
                     $img->save($thumb_path);
                 } catch (NotReadableException $e) {
                     $message = $e->getMessage();
-                    Log::error("[Image Library] failed to create uplaoded image thumbnail. Image type is not supported on this server", ['process' => '[permissions]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__, 'error_message' => $message]);
+                    Log::error(
+                        '[Image Library] failed to create uplaoded image thumbnail. Image type is not supported on this server',
+                        [
+                            'process' => '[permissions]',
+                            config('app.debug_ref'),
+                            'function' => __FUNCTION__,
+                            'file' => basename(__FILE__),
+                            'line' => __LINE__,
+                            'path' => __FILE__,
+                            'error_message' => $message,
+                        ]
+                    );
                     abort(409, __('lang.image_file_type_not_supported'));
                 }
             }
@@ -1219,7 +1301,11 @@ class Leads extends Controller {
                 //get users
                 $users = $this->leadpermissions->check('users', $lead);
                 //record notification
-                $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+                $emailusers = $this->trackingrepo->recordEvent(
+                    $data,
+                    $users,
+                    $event_id
+                );
             }
 
             /** ----------------------------------------------
@@ -1228,9 +1314,15 @@ class Leads extends Controller {
             if (isset($emailusers) && is_array($emailusers)) {
                 $data = $attachment->toArray();
                 //send to users
-                if ($users = \App\Models\User::WhereIn('id', $emailusers)->get()) {
+                if (
+                    $users = \App\Models\User::WhereIn('id', $emailusers)->get()
+                ) {
                     foreach ($users as $user) {
-                        $mail = new \App\Mail\LeadFileUploaded($user, $data, $lead);
+                        $mail = new \App\Mail\LeadFileUploaded(
+                            $user,
+                            $data,
+                            $lead
+                        );
                         $mail->build();
                     }
                 }
@@ -1252,12 +1344,15 @@ class Leads extends Controller {
      * @param object $attachment instance of the attachment model object
      * @return object
      */
-    private function applyAttachmentPermissions($attachment = '') {
-
+    private function applyAttachmentPermissions($attachment = '')
+    {
         //sanity - make sure this is a valid object
         if ($attachment instanceof \App\Models\Attachment) {
             //delete permissions
-            $attachment->permission_delete_attachment = $this->attachmentpermissions->check('delete', $attachment);
+            $attachment->permission_delete_attachment = $this->attachmentpermissions->check(
+                'delete',
+                $attachment
+            );
         }
     }
 
@@ -1265,25 +1360,31 @@ class Leads extends Controller {
      * delete an attachment
      * @return \Illuminate\Http\Response
      */
-    public function deleteAttachment() {
-
+    public function deleteAttachment()
+    {
         //check if file exists in the database
-        $attachment = \App\Models\Attachment::Where('attachment_uniqiueid', request()->route('uniqueid'))->first();
+        $attachment = \App\Models\Attachment::Where(
+            'attachment_uniqiueid',
+            request()->route('uniqueid')
+        )->first();
 
         //confirm thumb exists
         if ($attachment->attachment_directory != '') {
             if (Storage::exists("files/$attachment->attachment_directory")) {
-                Storage::deleteDirectory("files/$attachment->attachment_directory");
+                Storage::deleteDirectory(
+                    "files/$attachment->attachment_directory"
+                );
             }
         }
 
         $attachment->delete();
 
         //hide and remove row
-        $jsondata['dom_visibility'][] = array(
-            'selector' => '#card_attachment_' . $attachment->attachment_uniqiueid,
+        $jsondata['dom_visibility'][] = [
+            'selector' =>
+                '#card_attachment_' . $attachment->attachment_uniqiueid,
             'action' => 'slideup-slow-remove',
-        );
+        ];
 
         //response
         return response()->json($jsondata);
@@ -1293,10 +1394,13 @@ class Leads extends Controller {
      * download an attachment
      * @return \Illuminate\Http\Response
      */
-    public function downloadAttachment() {
-
+    public function downloadAttachment()
+    {
         //check if file exists in the database
-        $attachment = \App\Models\Attachment::Where('attachment_uniqiueid', request()->route('uniqueid'))->first();
+        $attachment = \App\Models\Attachment::Where(
+            'attachment_uniqiueid',
+            request()->route('uniqueid')
+        )->first();
 
         //confirm thumb exists
         if ($attachment->attachment_filename != '') {
@@ -1313,8 +1417,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return object
      */
-    public function updateTitle($id) {
-
+    public function updateTitle($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -1329,7 +1433,10 @@ class Leads extends Controller {
             //[type options] error|success
             $jsondata['notification'] = [
                 'type' => 'error',
-                'value' => __('lang.title') . ' ' . __('lang.must_not_contain_any_html'),
+                'value' =>
+                    __('lang.title') .
+                    ' ' .
+                    __('lang.must_not_contain_any_html'),
             ];
 
             //update back the title
@@ -1343,7 +1450,6 @@ class Leads extends Controller {
 
         //validation
         if (!request()->filled('lead_title')) {
-
             //[type options] error|success
             $jsondata['notification'] = [
                 'type' => 'error',
@@ -1358,7 +1464,6 @@ class Leads extends Controller {
             ];
 
             return response()->json($jsondata);
-
         } else {
             $lead->lead_title = request('lead_title');
             $lead->save();
@@ -1397,8 +1502,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateTags($id) {
-
+    public function updateTags($id)
+    {
         //delete & update tags
         $this->tagrepo->delete('lead', $id);
         $this->tagrepo->add('lead', $id);
@@ -1430,13 +1535,11 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return object
      */
-    public function storeComment(CommentRepository $commentrepo, $id) {
-
+    public function storeComment(CommentRepository $commentrepo, $id)
+    {
         //validate
         $validator = Validator::make(request()->all(), [
-            'comment_text' => [
-                'required',
-            ],
+            'comment_text' => ['required'],
         ]);
 
         //validation errors
@@ -1491,7 +1594,11 @@ class Leads extends Controller {
             //get users
             $users = $this->leadpermissions->check('users', $lead);
             //record notification
-            $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+            $emailusers = $this->trackingrepo->recordEvent(
+                $data,
+                $users,
+                $event_id
+            );
         }
 
         /** ----------------------------------------------
@@ -1526,16 +1633,19 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function deleteComment(DestroyRepository $destroyrepo, Comment $comment, $id) {
-
+    public function deleteComment(
+        DestroyRepository $destroyrepo,
+        Comment $comment,
+        $id
+    ) {
         //delete comment
         $destroyrepo->destroyComment($id);
 
         //hide and remove row
-        $jsondata['dom_visibility'][] = array(
+        $jsondata['dom_visibility'][] = [
             'selector' => '#card_comment_' . $comment->comment_id,
             'action' => 'slideup-slow-remove',
-        );
+        ];
 
         //response
         return response()->json($jsondata);
@@ -1546,13 +1656,11 @@ class Leads extends Controller {
      * @param object ChecklistRepository instance of the repository
      * @return object
      */
-    public function StoreChecklist(ChecklistRepository $checklistrepo, $id) {
-
+    public function StoreChecklist(ChecklistRepository $checklistrepo, $id)
+    {
         //validate
         $validator = Validator::make(request()->all(), [
-            'checklist_text' => [
-                'required',
-            ],
+            'checklist_text' => ['required'],
         ]);
 
         //validation errors
@@ -1576,10 +1684,15 @@ class Leads extends Controller {
         ]);
 
         //get next position
-        if ($last = \App\Models\Checklist::Where('checklistresource_type', 'lead')
-            ->Where('checklistresource_id', $id)
-            ->orderBy('checklist_position', 'desc')
-            ->first()) {
+        if (
+            $last = \App\Models\Checklist::Where(
+                'checklistresource_type',
+                'lead'
+            )
+                ->Where('checklistresource_id', $id)
+                ->orderBy('checklist_position', 'desc')
+                ->first()
+        ) {
             $position = $last->checklist_position + 1;
         } else {
             //default position
@@ -1612,13 +1725,11 @@ class Leads extends Controller {
      * @param object ChecklistRepository instance of the repository
      * @return object
      */
-    public function UpdateChecklist(ChecklistRepository $checklistrepo, $id) {
-
+    public function UpdateChecklist(ChecklistRepository $checklistrepo, $id)
+    {
         //validate
         $validator = Validator::make(request()->all(), [
-            'checklist_text' => [
-                'required',
-            ],
+            'checklist_text' => ['required'],
         ]);
 
         //validation errors
@@ -1660,8 +1771,10 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function deleteChecklist(Checklist $checklist, ChecklistRepository $checklistrepo) {
-
+    public function deleteChecklist(
+        Checklist $checklist,
+        ChecklistRepository $checklistrepo
+    ) {
         //check if file exists in the database
         $checklist = $checklist::find(request()->route('checklistid'));
 
@@ -1697,8 +1810,10 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function toggleChecklistStatus(Checklist $checklist, ChecklistRepository $checklistrepo) {
-
+    public function toggleChecklistStatus(
+        Checklist $checklist,
+        ChecklistRepository $checklistrepo
+    ) {
         //check if file exists in the database
         $checklist = $checklist::find(request()->route('checklistid'));
 
@@ -1732,13 +1847,15 @@ class Leads extends Controller {
      * @param object checklistProgress instance of the checlkist collection object
      * @return object
      */
-    private function checklistProgress($checklists) {
-
+    private function checklistProgress($checklists)
+    {
         $progress['bar'] = 'w-0'; //css width %
         $progress['completed'] = '---';
 
         //sanity - make sure this is a valid leads object
-        if ($checklists instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+        if (
+            $checklists instanceof \Illuminate\Pagination\LengthAwarePaginator
+        ) {
             $count = 0;
             $completed = 0;
             foreach ($checklists as $checklist) {
@@ -1763,12 +1880,15 @@ class Leads extends Controller {
      * @param object comment instance of the comment model object
      * @return \Illuminate\Http\Response
      */
-    private function applyCommentPermissions($comment = '') {
-
+    private function applyCommentPermissions($comment = '')
+    {
         //sanity - make sure this is a valid object
         if ($comment instanceof \App\Models\Comment) {
             //delete permissions
-            $comment->permission_delete_comment = $this->commentpermissions->check('delete', $comment);
+            $comment->permission_delete_comment = $this->commentpermissions->check(
+                'delete',
+                $comment
+            );
         }
     }
 
@@ -1777,12 +1897,15 @@ class Leads extends Controller {
      * @param object checklist instance of the resource model object
      * @return object
      */
-    private function applyChecklistPermissions($checklist = '') {
-
+    private function applyChecklistPermissions($checklist = '')
+    {
         //sanity - make sure this is a valid object
         if ($checklist instanceof \App\Models\Checklist) {
             //delete permissions
-            $checklist->permission_edit_delete_checklist = $this->checklistpermissions->check('edit-delete', $checklist);
+            $checklist->permission_edit_delete_checklist = $this->checklistpermissions->check(
+                'edit-delete',
+                $checklist
+            );
         }
     }
 
@@ -1791,18 +1914,15 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateDateAdded($id) {
-
+    public function updateDateAdded($id)
+    {
         //get the lead
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
 
         //validate
         $validator = Validator::make(request()->all(), [
-            'lead_created' => [
-                'required',
-                'date',
-            ],
+            'lead_created' => ['required', 'date'],
         ]);
 
         //validation errors
@@ -1841,22 +1961,16 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateName($id) {
-
+    public function updateName($id)
+    {
         //get the lead
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
 
         //validate
         $validator = Validator::make(request()->all(), [
-            'lead_firstname' => [
-                'required',
-                new NoTags,
-            ],
-            'lead_lastname' => [
-                'required',
-                new NoTags,
-            ],
+            'lead_firstname' => ['required', new NoTags()],
+            'lead_lastname' => ['required', new NoTags()],
         ]);
 
         //validation errors
@@ -1902,8 +2016,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateStatus($id) {
-
+    public function updateStatus($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -1917,7 +2031,12 @@ class Leads extends Controller {
         $old_status = $lead->lead_status;
 
         //validate
-        if (!\App\Models\LeadStatus::Where('leadstatus_id', request('lead_status'))->exists()) {
+        if (
+            !\App\Models\LeadStatus::Where(
+                'leadstatus_id',
+                request('lead_status')
+            )->exists()
+        ) {
             //show error and reset values
             return new UpdateErrorResponse([
                 'type' => 'update-status',
@@ -1929,7 +2048,10 @@ class Leads extends Controller {
             return new UpdateErrorResponse($payload);
         }
 
-        $statuses = \App\Models\LeadStatus::Where('leadstatus_id', request('lead_status'))->first();
+        $statuses = \App\Models\LeadStatus::Where(
+            'leadstatus_id',
+            request('lead_status')
+        )->first();
         $new_lead_status = $statuses->leadstatus_title;
 
         //validate
@@ -1967,7 +2089,11 @@ class Leads extends Controller {
                 //get users
                 $users = $this->leadpermissions->check('users', $lead);
                 //record notification
-                $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+                $emailusers = $this->trackingrepo->recordEvent(
+                    $data,
+                    $users,
+                    $event_id
+                );
             }
         }
 
@@ -1979,7 +2105,11 @@ class Leads extends Controller {
             //send to users
             if ($users = \App\Models\User::WhereIn('id', $emailusers)->get()) {
                 foreach ($users as $user) {
-                    $mail = new \App\Mail\LeadStatusChanged($user, $data, $lead);
+                    $mail = new \App\Mail\LeadStatusChanged(
+                        $user,
+                        $data,
+                        $lead
+                    );
                     $mail->build();
                 }
             }
@@ -2002,8 +2132,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateCategory($id) {
-
+    public function updateCategory($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -2014,7 +2144,14 @@ class Leads extends Controller {
         $lead = $leads->first();
 
         //validate
-        if (!\App\Models\Category::Where('category_id', request('lead_categoryid'))->Where('category_type', 'lead')->exists()) {
+        if (
+            !\App\Models\Category::Where(
+                'category_id',
+                request('lead_categoryid')
+            )
+                ->Where('category_type', 'lead')
+                ->exists()
+        ) {
             //show error and reset values
             return new UpdateErrorResponse([
                 'type' => 'update-category',
@@ -2024,7 +2161,12 @@ class Leads extends Controller {
             ]);
         }
 
-        $categories = \App\Models\Category::Where('category_id', request('lead_categoryid'))->Where('category_type', 'lead')->first();
+        $categories = \App\Models\Category::Where(
+            'category_id',
+            request('lead_categoryid')
+        )
+            ->Where('category_type', 'lead')
+            ->first();
         $new_lead_category = $categories->category_name;
 
         //validate
@@ -2051,8 +2193,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateValue($id) {
-
+    public function updateValue($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -2064,10 +2206,7 @@ class Leads extends Controller {
 
         //validate
         $validator = Validator::make(request()->all(), [
-            'lead_value' => [
-                'nullable',
-                'numeric',
-            ],
+            'lead_value' => ['nullable', 'numeric'],
         ]);
 
         //validation errors
@@ -2110,18 +2249,15 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updatePhone($id) {
-
+    public function updatePhone($id)
+    {
         //get the lead
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
 
         //validate
         $validator = Validator::make(request()->all(), [
-            'lead_phone' => [
-                'nullable',
-                new NoTags,
-            ],
+            'lead_phone' => ['nullable', new NoTags()],
         ]);
 
         //validation errors
@@ -2166,8 +2302,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateEmail($id) {
-
+    public function updateEmail($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -2179,10 +2315,7 @@ class Leads extends Controller {
 
         //validate
         $validator = Validator::make(request()->all(), [
-            'lead_email' => [
-                'nullable',
-                'email',
-            ],
+            'lead_email' => ['nullable', 'email'],
         ]);
 
         //validation errors
@@ -2224,8 +2357,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateSource($id) {
-
+    public function updateSource($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -2237,10 +2370,7 @@ class Leads extends Controller {
 
         //validate
         $validator = Validator::make(request()->all(), [
-            'lead_source' => [
-                'nullable',
-                new NoTags,
-            ],
+            'lead_source' => ['nullable', new NoTags()],
         ]);
 
         //validation errors
@@ -2282,8 +2412,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateContacted($id) {
-
+    public function updateContacted($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -2300,7 +2430,11 @@ class Leads extends Controller {
                 'date',
                 function ($attribute, $value, $fail) {
                     //skip for now, due to user/server time zone effect
-                    if (\Carbon\Carbon::parse(request('lead_last_contacted'))->isFuture()) {
+                    if (
+                        \Carbon\Carbon::parse(
+                            request('lead_last_contacted')
+                        )->isFuture()
+                    ) {
                         //return $fail(__('lang.date_cannot_be_in_future'));
                     }
                 },
@@ -2345,8 +2479,8 @@ class Leads extends Controller {
      * @param object LeadAssignedRepository instance of the repository
      * @return \Illuminate\Http\Response
      */
-    public function updateAssigned(LeadAssignedRepository $assignedrepo, $id) {
-
+    public function updateAssigned(LeadAssignedRepository $assignedrepo, $id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -2375,7 +2509,11 @@ class Leads extends Controller {
             foreach (request('assigned') as $user_id => $value) {
                 if ($value == 'on') {
                     //validate user exists
-                    if (\App\Models\User::Where('id', $user_id)->Where('type', 'team')->doesntExist()) {
+                    if (
+                        \App\Models\User::Where('id', $user_id)
+                            ->Where('type', 'team')
+                            ->doesntExist()
+                    ) {
                         return new UpdateResponse([
                             'type' => 'update-assigned',
                             'leads' => $leads,
@@ -2384,7 +2522,6 @@ class Leads extends Controller {
                             'message' => __('lang.assiged_user_not_found'),
                         ]);
                     }
-
                 }
             }
         }
@@ -2410,14 +2547,19 @@ class Leads extends Controller {
          * record assignment events and send emails
          * ----------------------------------------------*/
         foreach ($newly_signed_users as $assigned_user_id) {
-            if ($assigned_user = \App\Models\User::Where('id', $assigned_user_id)->first()) {
-
+            if (
+                $assigned_user = \App\Models\User::Where(
+                    'id',
+                    $assigned_user_id
+                )->first()
+            ) {
                 $data = [
                     'event_creatorid' => auth()->id(),
                     'event_item' => 'assigned',
                     'event_item_id' => '',
                     'event_item_lang' => 'event_assigned_user_to_a_lead',
-                    'event_item_lang_alt' => 'event_assigned_user_to_a_lead_alt',
+                    'event_item_lang_alt' =>
+                        'event_assigned_user_to_a_lead_alt',
                     'event_item_content' => __('lang.assigned'),
                     'event_item_content2' => $assigned_user_id,
                     'event_item_content3' => $assigned_user->first_name,
@@ -2429,13 +2571,18 @@ class Leads extends Controller {
                     'event_clientid' => '',
                     'eventresource_type' => 'lead',
                     'eventresource_id' => $lead->lead_id,
-                    'event_notification_category' => 'notifications_new_assignement',
+                    'event_notification_category' =>
+                        'notifications_new_assignement',
                 ];
                 //record event
                 if ($event_id = $this->eventrepo->create($data)) {
                     //record notification (skip the user creating this event)
                     if ($assigned_user_id != auth()->id()) {
-                        $emailusers = $this->trackingrepo->recordEvent($data, [$assigned_user_id], $event_id);
+                        $emailusers = $this->trackingrepo->recordEvent(
+                            $data,
+                            [$assigned_user_id],
+                            $event_id
+                        );
                     }
                 }
 
@@ -2443,8 +2590,15 @@ class Leads extends Controller {
                  * send email [assignment]
                  * ----------------------------------------------*/
                 if ($assigned_user_id != auth()->id()) {
-                    if ($assigned_user->notifications_new_assignement == 'yes_email') {
-                        $mail = new \App\Mail\LeadAssignment($assigned_user, $data, $lead);
+                    if (
+                        $assigned_user->notifications_new_assignement ==
+                        'yes_email'
+                    ) {
+                        $mail = new \App\Mail\LeadAssignment(
+                            $assigned_user,
+                            $data,
+                            $lead
+                        );
                         $mail->build();
                     }
                 }
@@ -2474,13 +2628,15 @@ class Leads extends Controller {
      * update a cards position (kanban drag & drop)
      * @return \Illuminate\Http\Response
      */
-    public function updatePosition() {
-
+    public function updatePosition()
+    {
         //validation
         if (!request()->filled('status')) {
             abort(409, __('lang.error_request_could_not_be_completed'));
         }
-        if (!array_key_exists(request('status'), config('system.lead_statuses'))) {
+        if (
+            !array_key_exists(request('status'), config('system.lead_statuses'))
+        ) {
             abort(409, __('lang.error_request_could_not_be_completed'));
         }
 
@@ -2497,39 +2653,63 @@ class Leads extends Controller {
         $old_status = $lead->lead_status;
 
         //(scenario - 1) card is placed in between 2 other cards
-        if (is_numeric(request('previous_lead_id')) && is_numeric(request('next_lead_id'))) {
+        if (
+            is_numeric(request('previous_lead_id')) &&
+            is_numeric(request('next_lead_id'))
+        ) {
             //get previous lead
-            if (!$previous_lead = $this->leadmodel::find(request('previous_lead_id'))) {
+            if (
+                !($previous_lead = $this->leadmodel::find(
+                    request('previous_lead_id')
+                ))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //get next lead
-            if (!$next_lead = $this->leadmodel::find(request('next_lead_id'))) {
+            if (
+                !($next_lead = $this->leadmodel::find(request('next_lead_id')))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //calculate this leads new position & update it
-            $new_position = ($previous_lead->lead_position + $next_lead->lead_position) / 2;
+            $new_position =
+                ($previous_lead->lead_position + $next_lead->lead_position) / 2;
             $lead->lead_position = $new_position;
             $lead->lead_status = request('status');
             $lead->save();
         }
 
         //(scenario - 2) card is placed at the end of a list
-        if (is_numeric(request('previous_lead_id')) && !request()->filled('next_lead_id')) {
+        if (
+            is_numeric(request('previous_lead_id')) &&
+            !request()->filled('next_lead_id')
+        ) {
             //get previous lead
-            if (!$previous_lead = $this->leadmodel::find(request('previous_lead_id'))) {
+            if (
+                !($previous_lead = $this->leadmodel::find(
+                    request('previous_lead_id')
+                ))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //calculate this leads new position & update it
-            $new_position = $previous_lead->lead_position + config('settings.db_position_increment');
+            $new_position =
+                $previous_lead->lead_position +
+                config('settings.db_position_increment');
             $lead->lead_position = $new_position;
             $lead->lead_status = request('status');
             $lead->save();
         }
 
         //(scenario - 3) card is placed at the start of a list
-        if (is_numeric(request('next_lead_id')) && !request()->filled('previous_lead_id')) {
+        if (
+            is_numeric(request('next_lead_id')) &&
+            !request()->filled('previous_lead_id')
+        ) {
             //get next lead
-            if (!$next_lead = $this->leadmodel::find(request('next_lead_id'))) {
+            if (
+                !($next_lead = $this->leadmodel::find(request('next_lead_id')))
+            ) {
                 abort(409, __('lang.error_request_could_not_be_completed'));
             }
             //calculate this leads new position & update it
@@ -2540,7 +2720,10 @@ class Leads extends Controller {
         }
 
         //(scenario - 4) card is placed on an empty board
-        if (!request()->filled('previous_lead_id') && !request()->filled('next_lead_id')) {
+        if (
+            !request()->filled('previous_lead_id') &&
+            !request()->filled('next_lead_id')
+        ) {
             //update only status
             $lead->lead_status = request('status');
             $lead->save();
@@ -2577,7 +2760,11 @@ class Leads extends Controller {
                 //get users
                 $users = $this->leadpermissions->check('users', $lead);
                 //record notification
-                $emailusers = $this->trackingrepo->recordEvent($data, $users, $event_id);
+                $emailusers = $this->trackingrepo->recordEvent(
+                    $data,
+                    $users,
+                    $event_id
+                );
             }
 
             /** ----------------------------------------------
@@ -2586,16 +2773,20 @@ class Leads extends Controller {
             if (isset($emailusers) && is_array($emailusers)) {
                 $data = [];
                 //send to users
-                if ($users = \App\Models\User::WhereIn('id', $emailusers)->get()) {
+                if (
+                    $users = \App\Models\User::WhereIn('id', $emailusers)->get()
+                ) {
                     foreach ($users as $user) {
-                        $mail = new \App\Mail\LeadStatusChanged($user, $data, $lead);
+                        $mail = new \App\Mail\LeadStatusChanged(
+                            $user,
+                            $data,
+                            $lead
+                        );
                         $mail->build();
                     }
                 }
             }
-
         }
-
     }
 
     /**
@@ -2605,14 +2796,23 @@ class Leads extends Controller {
      * @param object UserRepository instance of the repository
      * @return object
      */
-    public function convertLead(LeadConvert $request, ClientRepository $clientrepo, UserRepository $userrepo, $id) {
-
+    public function convertLead(
+        LeadConvert $request,
+        ClientRepository $clientrepo,
+        UserRepository $userrepo,
+        $id
+    ) {
         //get the lead
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
 
         //create new customer
-        if (\App\Models\Client::where('client_created_from_leadid', $id)->exists()) {
+        if (
+            \App\Models\Client::where(
+                'client_created_from_leadid',
+                $id
+            )->exists()
+        ) {
             abort(409, __('lang.client_already_exists'));
         }
 
@@ -2627,7 +2827,7 @@ class Leads extends Controller {
         ]);
 
         //save the client first
-        if (!$client = $clientrepo->create(['return' => 'client'])) {
+        if (!($client = $clientrepo->create(['return' => 'client']))) {
             abort(409);
         }
 
@@ -2638,8 +2838,7 @@ class Leads extends Controller {
         //client id
         $client_id = $client->client_id;
 
-
-       //delete the lead (if requested)
+        //delete the lead (if requested)
         if (request('delete_lead') == 'on') {
             //delete lead
             $lead->delete();
@@ -2672,7 +2871,6 @@ class Leads extends Controller {
 
         //process reponse
         return new convertLeadResponse($payload);
-
     }
 
     /**
@@ -2681,8 +2879,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function archive($id) {
-
+    public function archive($id)
+    {
         //get lead and update status
         $lead = \App\Models\Lead::Where('lead_id', $id)->first();
         $lead->lead_active_state = 'archived';
@@ -2714,8 +2912,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function activate($id) {
-
+    public function activate($id)
+    {
         //get lead and update status
         $lead = \App\Models\Lead::Where('lead_id', $id)->first();
         $lead->lead_active_state = 'active';
@@ -2744,8 +2942,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function showMain($id) {
-
+    public function showMain($id)
+    {
         //get leads
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
@@ -2758,7 +2956,6 @@ class Leads extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2767,8 +2964,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function showOrganisation($id) {
-
+    public function showOrganisation($id)
+    {
         //get leads
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
@@ -2781,7 +2978,6 @@ class Leads extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2790,8 +2986,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function editOrganisation($id) {
-
+    public function editOrganisation($id)
+    {
         //get leads
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
@@ -2804,7 +3000,6 @@ class Leads extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2812,8 +3007,8 @@ class Leads extends Controller {
      * @param int $id lead id
      * @return \Illuminate\Http\Response
      */
-    public function updateOrganisation($id) {
-
+    public function updateOrganisation($id)
+    {
         //validate
         if (!$this->leadmodel::find($id)) {
             abort(409, __('lang.error_request_could_not_be_completed'));
@@ -2825,37 +3020,14 @@ class Leads extends Controller {
 
         //validate
         $validator = Validator::make(request()->all(), [
-            'lead_company_name' => [
-                'nullable',
-                new NoTags,
-            ],
-            'lead_job_position' => [
-                'nullable',
-                new NoTags,
-            ],
-            'lead_street' => [
-                'nullable',
-                new NoTags,
-            ],
-            'lead_city' => [
-                'nullable',
-                new NoTags,
-            ],
-            'lead_state' => [
-                'nullable',
-                new NoTags,
-            ],
-            'lead_zip' => [
-                'nullable',
-                new NoTags,
-            ],
-            'lead_country' => [
-                'nullable',
-                new NoTags,
-            ],
-            'lead_website' => [
-                'nullable',
-            ],
+            'lead_company_name' => ['nullable', new NoTags()],
+            'lead_job_position' => ['nullable', new NoTags()],
+            'lead_street' => ['nullable', new NoTags()],
+            'lead_city' => ['nullable', new NoTags()],
+            'lead_state' => ['nullable', new NoTags()],
+            'lead_zip' => ['nullable', new NoTags()],
+            'lead_country' => ['nullable', new NoTags()],
+            'lead_website' => ['nullable'],
         ]);
 
         //validation errors
@@ -2903,8 +3075,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function showCustomFields($id) {
-
+    public function showCustomFields($id)
+    {
         //get leads
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
@@ -2925,7 +3097,6 @@ class Leads extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2934,8 +3105,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function editCustomFields($id) {
-
+    public function editCustomFields($id)
+    {
         //get leads
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
@@ -2956,7 +3127,6 @@ class Leads extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -2965,8 +3135,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateCustomFields($id) {
-
+    public function updateCustomFields($id)
+    {
         //get leads
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
@@ -2980,10 +3150,9 @@ class Leads extends Controller {
 
         //update
         foreach ($fields as $field) {
-            \App\Models\Lead::where('lead_id', $id)
-                ->update([
-                    $field->customfields_name => $_POST[$field->customfields_name],
-                ]);
+            \App\Models\Lead::where('lead_id', $id)->update([
+                $field->customfields_name => $_POST[$field->customfields_name],
+            ]);
         }
 
         //refeshed data
@@ -3000,7 +3169,6 @@ class Leads extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -3009,12 +3177,15 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function showMyNotes($id) {
-
+    public function showMyNotes($id)
+    {
         //get leads
-        if ($note = \App\Models\Note::Where('noteresource_type', 'lead')
-            ->Where('noteresource_id', $id)
-            ->Where('note_creatorid', auth()->id())->first()) {
+        if (
+            $note = \App\Models\Note::Where('noteresource_type', 'lead')
+                ->Where('noteresource_id', $id)
+                ->Where('note_creatorid', auth()->id())
+                ->first()
+        ) {
             $has_note = true;
         } else {
             $note = [];
@@ -3043,12 +3214,13 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function editMyNotes($id) {
-
+    public function editMyNotes($id)
+    {
         //get leads
         $note = \App\Models\Note::Where('noteresource_type', 'lead')
             ->Where('noteresource_id', $id)
-            ->Where('note_creatorid', auth()->id())->first();
+            ->Where('note_creatorid', auth()->id())
+            ->first();
 
         //refeshed data
         $leads = $this->leadrepo->search($id);
@@ -3071,12 +3243,13 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function deleteMyNotes($id) {
-
+    public function deleteMyNotes($id)
+    {
         //delete all notes by this user
         \App\Models\Note::Where('noteresource_type', 'lead')
             ->where('noteresource_id', $id)
-            ->where('note_creatorid', auth()->id())->delete();
+            ->where('note_creatorid', auth()->id())
+            ->delete();
 
         //refeshed data
         $leads = $this->leadrepo->search($id);
@@ -3099,12 +3272,13 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function createMyNotes($id) {
-
+    public function createMyNotes($id)
+    {
         //delete all notes by this user
         \App\Models\Note::Where('noteresource_type', 'lead')
             ->where('noteresource_id', $id)
-            ->where('note_creatorid', auth()->id())->delete();
+            ->where('note_creatorid', auth()->id())
+            ->delete();
 
         //refeshed data
         $leads = $this->leadrepo->search($id);
@@ -3126,8 +3300,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateMyNotes($id) {
-
+    public function updateMyNotes($id)
+    {
         //validation
         if (!request()->filled('lead_mynotes')) {
             abort(409, __('lang.fill_in_all_required_fields'));
@@ -3136,7 +3310,8 @@ class Leads extends Controller {
         //delete all notes by this user
         \App\Models\Note::Where('noteresource_type', 'lead')
             ->where('noteresource_id', $id)
-            ->where('note_creatorid', auth()->id())->delete();
+            ->where('note_creatorid', auth()->id())
+            ->delete();
 
         //create note
         $note = new \App\Models\Note();
@@ -3169,9 +3344,11 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function showLogs($id) {
-
-        $logs = \App\Models\Leadlog::Where('leadlog_leadid', $id)->orderBy('leadlog_id', 'DESC')->get();
+    public function showLogs($id)
+    {
+        $logs = \App\Models\Leadlog::Where('leadlog_leadid', $id)
+            ->orderBy('leadlog_id', 'DESC')
+            ->get();
 
         //package to send to response
         $payload = [
@@ -3181,7 +3358,6 @@ class Leads extends Controller {
 
         //show the form
         return new contentResponse($payload);
-
     }
 
     /**
@@ -3190,8 +3366,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cloneLead($id) {
-
+    public function cloneLead($id)
+    {
         //get task
         $leads = $this->leadrepo->search($id);
         $lead = $leads->first();
@@ -3207,7 +3383,6 @@ class Leads extends Controller {
 
         //show the view
         return new CloneResponse($payload);
-
     }
 
     /**
@@ -3216,8 +3391,8 @@ class Leads extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cloneStore(LeadAssignedRepository $assignedrepo, $id) {
-
+    public function cloneStore(LeadAssignedRepository $assignedrepo, $id)
+    {
         //lead
         $lead = \App\Models\Lead::Where('lead_id', $id)->first();
 
@@ -3232,8 +3407,9 @@ class Leads extends Controller {
             'lead_phone' => request('lead_phone'),
             'lead_company_name' => request('lead_company_name'),
             'lead_website' => request('lead_website'),
-            'copy_checklist' => (request('copy_checklist') == 'on') ? true : false,
-            'copy_files' => (request('copy_files') == 'on') ? true : false,
+            'copy_checklist' =>
+                request('copy_checklist') == 'on' ? true : false,
+            'copy_files' => request('copy_files') == 'on' ? true : false,
         ];
         $new_lead = $this->leadrepo->cloneLead($lead, $data);
 
@@ -3270,7 +3446,6 @@ class Leads extends Controller {
 
         //show the view
         return new CloneStoreResponse($payload);
-
     }
 
     /**
@@ -3279,19 +3454,22 @@ class Leads extends Controller {
      * @param array $data any other data (optional)
      * @return array
      */
-    private function pageSettings($section = '', $data = []) {
-
+    private function pageSettings($section = '', $data = [])
+    {
         //common settings
         $page = [
-            'crumbs' => [
-                __('lang.leads'),
-            ],
+            'crumbs' => [__('lang.leads')],
             'crumbs_special_class' => 'list-pages-crumbs',
             'page' => 'leads',
             'no_results_message' => __('lang.no_results_found'),
             'mainmenu_leads' => 'active',
             'sidepanel_id' => 'sidepanel-filter-leads',
-            'dynamic_search_url' => url('leads/search?action=search&leadresource_id=' . request('leadresource_id') . '&leadresource_type=' . request('leadresource_type')),
+            'dynamic_search_url' => url(
+                'leads/search?action=search&leadresource_id=' .
+                    request('leadresource_id') .
+                    '&leadresource_type=' .
+                    request('leadresource_type')
+            ),
             'add_button_classes' => '',
             'load_more_button_route' => 'leads',
             'source' => 'list',
@@ -3300,8 +3478,18 @@ class Leads extends Controller {
         //default modal settings (modify for sepecif sections)
         $page += [
             'add_modal_title' => __('lang.add_lead'),
-            'add_modal_create_url' => url('leads/create?leadresource_id=' . request('leadresource_id') . '&leadresource_type=' . request('leadresource_type')),
-            'add_modal_action_url' => url('leads?leadresource_id=' . request('leadresource_id') . '&leadresource_type=' . request('leadresource_type')),
+            'add_modal_create_url' => url(
+                'leads/create?leadresource_id=' .
+                    request('leadresource_id') .
+                    '&leadresource_type=' .
+                    request('leadresource_type')
+            ),
+            'add_modal_action_url' => url(
+                'leads?leadresource_id=' .
+                    request('leadresource_id') .
+                    '&leadresource_type=' .
+                    request('leadresource_type')
+            ),
             'add_modal_action_ajax_class' => '',
             'add_modal_action_ajax_loading_target' => 'commonModalBody',
             'add_modal_action_method' => 'POST',
@@ -3312,7 +3500,6 @@ class Leads extends Controller {
             $page += [
                 'meta_title' => __('lang.leads'),
                 'heading' => __('lang.leads'),
-
             ];
             if (request('source') == 'ext') {
                 $page += [
@@ -3357,7 +3544,8 @@ class Leads extends Controller {
      * data for the stats widget
      * @return array
      */
-    private function statsWidget($data = array()) {
+    private function statsWidget($data = [])
+    {
         //TO DO IN THE FUTURE
         return [];
     }

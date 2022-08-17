@@ -10,11 +10,12 @@
 namespace App\Http\Responses\Leads;
 use Illuminate\Contracts\Support\Responsable;
 
-class IndexKanbanResponse implements Responsable {
-
+class IndexKanbanResponse implements Responsable
+{
     private $payload;
 
-    public function __construct($payload = array()) {
+    public function __construct($payload = [])
+    {
         $this->payload = $payload;
     }
 
@@ -24,49 +25,55 @@ class IndexKanbanResponse implements Responsable {
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function toResponse($request) {
-
+    public function toResponse($request)
+    {
         //set all data to arrays
         foreach ($this->payload as $key => $value) {
             $$key = $value;
         }
 
         //was this call made from an embedded page/ajax or directly on team page
-        if (request('source') == 'ext' || request('action') == 'search' || request()->ajax()) {
-
+        if (
+            request('source') == 'ext' ||
+            request('action') == 'search' ||
+            request()->ajax()
+        ) {
             //template and dom - for additional ajax loading
             switch (request('action')) {
+                //from the sorting links
+                case 'sort':
+                    $template = 'pages/leads/components/kanban/wrapper';
+                    $dom_container = '#leads-view-wrapper';
+                    $dom_action = 'replace-with';
+                    break;
 
-            //from the sorting links
-            case 'sort':
-                $template = 'pages/leads/components/kanban/wrapper';
-                $dom_container = '#leads-view-wrapper';
-                $dom_action = 'replace-with';
-                break;
+                //from search box or filter panel
+                case 'search':
+                    $template = 'pages/leads/components/kanban/wrapper';
+                    $dom_container = '#leads-view-wrapper';
+                    $dom_action = 'replace-with';
+                    break;
 
-            //from search box or filter panel
-            case 'search':
-                $template = 'pages/leads/components/kanban/wrapper';
-                $dom_container = '#leads-view-wrapper';
-                $dom_action = 'replace-with';
-                break;
-
-            //leadlate and dom - for ajax initial loading
-            default:
-                $template = 'pages/leads/tabswrapper';
-                $dom_container = '#embed-content-container';
-                $dom_action = 'replace';
-                break;
+                //leadlate and dom - for ajax initial loading
+                default:
+                    $template = 'pages/leads/tabswrapper';
+                    $dom_container = '#embed-content-container';
+                    $dom_action = 'replace';
+                    break;
             }
 
             //flip sorting url for this particular link - only is we clicked sort menu links
             if (request('action') == 'sort') {
-                $sort_url = flipSortingUrl(request()->fullUrl(), request('sortorder'));
+                $sort_url = flipSortingUrl(
+                    request()->fullUrl(),
+                    request('sortorder')
+                );
                 $element_id = '#sort_' . request('orderby');
-                $jsondata['dom_attributes'][] = array(
+                $jsondata['dom_attributes'][] = [
                     'selector' => $element_id,
                     'attr' => 'data-url',
-                    'value' => $sort_url);
+                    'value' => $sort_url,
+                ];
             }
 
             //render the view and save to json
@@ -75,27 +82,43 @@ class IndexKanbanResponse implements Responsable {
                 if (request()->filled('source')) {
                     $name = request('source');
                     $board = $boards[$name];
-                    $html = view('pages/leads/components/kanban/card', compact('board'))->render();
-                    $jsondata['dom_html'][] = array(
+                    $html = view(
+                        'pages/leads/components/kanban/card',
+                        compact('board')
+                    )->render();
+                    $jsondata['dom_html'][] = [
                         'selector' => '#kanban-board-' . $name,
                         'action' => $dom_action,
-                        'value' => $html);
+                        'value' => $html,
+                    ];
                 }
             } else {
-                $html = view($template, compact('page', 'boards', 'stats', 'categories', 'tags', 'statuses'))->render();
-                $jsondata['dom_html'][] = array(
+                $html = view(
+                    $template,
+                    compact(
+                        'page',
+                        'boards',
+                        'stats',
+                        'categories',
+                        'tags',
+                        'statuses'
+                    )
+                )->render();
+                $jsondata['dom_html'][] = [
                     'selector' => $dom_container,
                     'action' => $dom_action,
-                    'value' => $html);
+                    'value' => $html,
+                ];
             }
 
             //move the actions buttons
             if (request('source') == 'ext' && request('action') == '') {
-                $jsondata['dom_move_element'][] = array(
+                $jsondata['dom_move_element'][] = [
                     'element' => '#list-page-actions',
                     'newparent' => '.parent-page-actions',
                     'method' => 'replace',
-                    'visibility' => 'show');
+                    'visibility' => 'show',
+                ];
                 $jsondata['dom_visibility'][] = [
                     'selector' => '#list-page-actions-container',
                     'action' => 'show',
@@ -111,10 +134,11 @@ class IndexKanbanResponse implements Responsable {
 
             //reload stats widget
             $html = view('misc/list-pages-stats', compact('stats'))->render();
-            $jsondata['dom_html'][] = array(
+            $jsondata['dom_html'][] = [
                 'selector' => '#list-pages-stats-widget',
                 'action' => 'replace-with',
-                'value' => $html);
+                'value' => $html,
+            ];
             //stats visibility of reload
             if (auth()->user()->stats_panel_position == 'open') {
                 $jsondata['dom_visibility'][] = [
@@ -176,13 +200,20 @@ class IndexKanbanResponse implements Responsable {
 
             //ajax response
             return response()->json($jsondata);
-
         } else {
             //standard view
             $page['loading_target'] = 'leads-td-container';
-            return view('pages/leads/wrapper', compact('page', 'boards', 'stats', 'categories', 'tags', 'statuses'))->render();
+            return view(
+                'pages/leads/wrapper',
+                compact(
+                    'page',
+                    'boards',
+                    'stats',
+                    'categories',
+                    'tags',
+                    'statuses'
+                )
+            )->render();
         }
-
     }
-
 }
