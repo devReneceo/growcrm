@@ -1,4 +1,6 @@
 <?php
+use Illuminate\Support\Facades\URL;
+URL::forceSchema('https');
 Route::any('api-login', 'Authenticate@apilogInAction');
 //TESTING [DEV]
 Route::get('test', 'Test@index');
