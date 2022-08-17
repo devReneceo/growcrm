@@ -10,10 +10,10 @@
     <base href="{{ url('/') }}" target="_self">
 
     <!--JQUERY & OTHER HEADER JS-->
-    <script src="public/vendor/js/vendor.header.js?v={{ config('system.versioning') }}"></script>
+    <script src="{{ url('/') }}/public/vendor/js/vendor.header.js?v={{ config('system.versioning') }}"></script>
 
     <!--BOOTSTRAP-->
-    <link href="public/vendor/css/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url('/') }}/public/vendor/css/bootstrap/bootstrap.min.css" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/brands.min.css">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -28,39 +28,39 @@
 
 
     <!--VENDORS CSS-->
-    <link rel="stylesheet" href="public/vendor/css/vendor.css?v={{ config('system.versioning') }}">
+    <link rel="stylesheet" href="{{ url('/') }}/public/vendor/css/vendor.css?v={{ config('system.versioning') }}">
 
     <!--ICONS-->
-    <link rel="stylesheet" href="public/vendor/fonts/growcrm-icons/styles.css?v={{ config('system.versioning') }}">
+    <link rel="stylesheet" href="{{ url('/') }}/public/vendor/fonts/growcrm-icons/styles.css?v={{ config('system.versioning') }}">
 
     <!--THEME STYLE-->
     @if(auth()->check())
     <link
-        href="public/themes/{{ auth()->user()->pref_theme }}/css/style.css?v={{ config('system.settings_system_javascript_versioning') }}"
+        href="{{ url('/') }}/public/themes/{{ auth()->user()->pref_theme }}/css/style.css?v={{ config('system.settings_system_javascript_versioning') }}"
         rel="stylesheet">
     @else
     <link href="{{ config('theme.selected_theme_css') }} " rel="stylesheet">
     @endif
 
     <!--USERS CUSTON CSS FILE-->
-    <link href="public/css/custom.css?v={{ config('system.versioning') }}" rel="stylesheet">
+    <link href="{{ url('/') }}/public/css/custom.css?v={{ config('system.versioning') }}" rel="stylesheet">
 
     <!-- Favicon icon -->
-    <link rel="apple-touch-icon" sizes="57x57" href="public/images/favicon/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="public/images/favicon/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="public/images/favicon/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="public/images/favicon/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="public/images/favicon/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="public/images/favicon/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="public/images/favicon/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="public/images/favicon/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="public/images/favicon/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="public/images/favicon/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="public/images/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="public/images/favicon/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="public/images/favicon/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="{{ url('/') }}/public/images/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="{{ url('/') }}/public/images/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="{{ url('/') }}/public/images/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ url('/') }}/public/images/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url('/') }}/public/images/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ url('/') }}/public/images/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url('/') }}/public/images/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url('/') }}/public/images/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url('/') }}/public/images/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url('/') }}/public/images/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url('/') }}/public/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ url('/') }}/public/images/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url('/') }}/public/images/favicon/favicon-16x16.png">
     <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="public/images/favicon/ms-icon-144x144.png">
+    <meta name="msapplication-TileImage" content="{{ url('/') }}/public/images/favicon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
 
 
@@ -151,7 +151,7 @@
     </script>
 
     <!--boot js-->
-    <script src="public/js/core/head.js?v={{ config('system.versioning') }}"></script>
+    <script src="{{ url('/') }}/public/js/core/head.js?v={{ config('system.versioning') }}"></script>
 
     <!--stripe payments js-->
     @if(@config('visibility.stripe_js'))
