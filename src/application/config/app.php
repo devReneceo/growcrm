@@ -12,7 +12,6 @@
  */
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -75,7 +74,7 @@ return [
     |
      */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => 'https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/', //env('APP_URL', 'http://localhost'),
 
     /*
     |--------------------------------------------------------------------------
@@ -143,7 +142,6 @@ return [
      */
 
     'providers' => [
-
         /*
          * Laravel Framework Service Providers...
          */
@@ -171,7 +169,6 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
 
-
         /*
          * Package Service Providers...
          */
@@ -195,7 +192,6 @@ return [
         App\Providers\ConfigMailServiceProvider::class,
         App\Providers\ConfigThemeServiceProvider::class,
         App\Providers\UpdateServiceProvider::class,
-
     ],
 
     /*
@@ -210,7 +206,6 @@ return [
      */
 
     'aliases' => [
-
         'App' => Illuminate\Support\Facades\App::class,
         'Artisan' => Illuminate\Support\Facades\Artisan::class,
         'Auth' => Illuminate\Support\Facades\Auth::class,
@@ -295,5 +290,4 @@ return [
     |
      */
     'installed_version' => env('APP_INSTALLED_VERSION'),
-
 ];
