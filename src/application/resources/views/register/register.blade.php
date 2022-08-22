@@ -5,12 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Hit 60</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" rel="stylesheet" />
+    <style>
+        .modal-content {
+     background-color: rgba(0,0,0,.0001) !important;
+     border: 0px !important;
+}
+    </style>
   </head>
   <body>
       <div class="container">
-    <div class="row">
+    <div class="row"> 
         <div class="col-md-12 text-center">
         <h1>Hit 60 Register Form</h1>
+   
+        <div id="msg_errors"></div>
         </div>
         <div class="row">
         <div class="col-md-12 text-center">
@@ -85,11 +94,32 @@
     </div>
       
 </div>
+
+<!-- Modal -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+   
+      <div class="modal-body text-center">
+      <div class="fa-5x">
+    
+    <i class="fas fa-spinner fa-pulse" style="color:#fff;"></i>
+    
+  </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/js/all.min.js"> </script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     <script>
         $(()=>{
-         
+           
+       
 
             // if(check_cookie_name('_user')) {
             //             location.href='http://localhost/';
@@ -97,26 +127,44 @@
              
         });
         $('#submit').click(()=>{
-            if(hasErrors()) {return;}
+            var myModal = new bootstrap.Modal(document.getElementById('staticBackdrop'))
+            myModal.show();
+            if(hasErrors()) { 
+               setTimeout(function(){
+                console.log('errros 22222');
+                 myModal.hide();
+               },1000)
+              
+                 return;
+                }
             const queryString = window.location.search;
            
            const urlParams = new URLSearchParams(queryString);
          
            const late = urlParams.get('la');
-            console.log('calling ajax....');
                 $.ajax({
                 url:'/signup',
                 type: 'POST',
-                data:{lead_associate:late,"password_confirmation":$('#confirmpassword').val(), "_token": "{{ csrf_token() }}",client_company_name:'Hit 60',first_name:$('#name').val(),last_name:$('#lastname').val(),email:$('#email').val(), phone:$('#phone').val(), password: $('#password').val()},
-                datatype: 'json',
+                data:{lead_associate:late,"password_confirmation":$('#confirmpassword').val(), "_token": "{{ csrf_token() }}",client_company_name:'Hit 60',first_name:$('#name').val(),last_name:$('#lastname').val(),email:$('#email').val(), phone:$('#phone').val(), password: $('#password').val()},            
+                dataType: 'json',
                 success: function (data) { 
-                    console.log('response.....::');
+                    myModal.hide();                    
                     console.log(data)
                     location.href='http://localhost/';
                 },
-                error: function (jqXHR, textStatus, errorThrown) { 
-                    console.error(textStatus);
-                    alert('Somthing When Wrong plase try again or contact support team');
+                error: function (error) {
+                    myModal.hide();
+                    console.error(error.responseText);
+                    error = JSON.parse(error.responseText);                    
+                    console.log(error)
+                    if (error.notification) {
+
+                        $('#msg_errors').html(`<div class="alert alert-danger">${error.notification.value} </div>`).focus();
+                    }else {
+                        alert('Somthing When Wrong plase try again or contact support team');
+                     
+                    }
+                 
                 }
                 });
 
@@ -152,8 +200,8 @@
             $('#validationlastName').html('Last Name is required.');
             errors = true;
         } else {
-            $('#name').removeClass('is-invalid');
-            $('#name').addClass('is-valid');
+            $('#lastname').removeClass('is-invalid');
+            $('#lastname').addClass('is-valid');
         }
         if ($('#email').val() === '') {
             errors = true;
@@ -216,6 +264,10 @@
 
         return errors;
         }
+
+
+
+      
     </script>
   </body>
 </html>

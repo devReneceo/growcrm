@@ -1,12 +1,13 @@
 <?php
 
-Route::any('api-login', 'Authenticate@apilogInAction');
 //TESTING [DEV]
-Route::get('test', 'Test@index');
-Route::post('test', 'Test@index');
-Route::any('register', 'Register@index');
+Route::any('api-login', 'Authenticate@apilogInAction');
+// custome sig up
+Route::any('signup', 'Register@index');
+// custome associate subscription
+Route::any('associate_subscription', 'Register@leadAssociate');
+//Custome api call
 Route::post('newUser', 'Register@add');
-Route::any('becomeAssociate', 'Register@leadAssociate');
 //HOME PAGE
 Route::any('/', function () {
     return redirect('/home');
@@ -18,7 +19,7 @@ Route::get('/login', 'Authenticate@logIn')->name('login');
 Route::post('/login', 'Authenticate@logInAction');
 Route::get('/forgotpassword', 'Authenticate@forgotPassword');
 Route::post('/forgotpassword', 'Authenticate@forgotPasswordAction');
-Route::get('/signup', 'Authenticate@signUp');
+//Route::get('/signup', 'Authenticate@signUp');
 Route::post('/signup', 'Authenticate@signUpAction');
 Route::get('/resetpassword', 'Authenticate@resetPassword');
 Route::post('/resetpassword', 'Authenticate@resetPasswordAction');
