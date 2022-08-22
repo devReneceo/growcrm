@@ -150,7 +150,7 @@
                 success: function (data) { 
                     myModal.hide();                    
                     console.log(data)
-                    location.href='http://localhost/';
+                    location.href='https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/';
                 },
                 error: function (error) {
                     myModal.hide();
