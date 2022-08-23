@@ -5,19 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Hit 60</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
-    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        .modal-content {
+     background-color: rgba(0,0,0,.0001) !important;
+     border: 0px !important;
+}
+    </style>
   </head>
   <body>
 
-  
-    <div class="container">
+  <!-- Modal -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+   
+      <div class="modal-body text-center">
+      <div class="fa-5x">
     
+    <i class="fas fa-spinner fa-pulse" style="color:#fff;"></i>
+    
+  </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    <div class="container"> 
     @if(!$isLogedIn)
     <div class="row">
         <div class="col-md-12 text-center">
         <h1>Hit 60 Associate Register Form </h1>
+     
         </div>
 
 
@@ -39,9 +60,10 @@
 <div class="tab-content" id="pills-tabContent">
   <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab" tabindex="0">
       <h1>Register</h1>
+      <div id="msg_errors"></div>
   <form>
-                <div class="mb-3">
-                <label for="name" class="form-label">Name</label>
+                <div class="col-mb-3">
+                <label for="name" class="form-label">First Name</label>
                 <input type="text" class="form-control" id="name" aria-describedby="nameHelp">    
                 <div class="valid-feedback">
                     Looks good!
@@ -50,7 +72,16 @@
                     
                     </div>      
                 </div>
-             
+                <div class="col-mb-3">
+                <label for="name" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="lastname" aria-describedby="nameHelp">    
+                <div class="valid-feedback">
+                    Looks good!
+                    </div>      
+                    <div id="validationlastName" class="invalid-feedback">
+                    
+                    </div>      
+                </div>
                 <div class="mb-3">
                 <label for="exampleInputEmail1" class="form-label">Email address</label>
                 <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
@@ -127,8 +158,9 @@
 @endif
       
 @if($isLogedIn)    
-
-    @if(auth()->user()->associate != 1)    
+<br>
+<h1>asdsd: {{auth()->user()->associate }}</h1>
+    @if(auth()->user()->associate == '')    
     <div>
     <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}} </h1>
         <h3> Become an associate with $9 Dll per month</h3>
@@ -138,14 +170,18 @@
 
     @if(auth()->user()->associate == 1)    
     <div>
-    <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}}  You already are associate with us </h1>
-        <h3> Become an associate with $9 Dll per month</h3>
+    <h1>  Hi: {{auth()->user()->first_name}} {{auth()->user()->last_name}}  You already are associate with us </h1>        
         <a class="btn btn-primary" href="/leads"> Got to my leads </a>
     </div>
     @endif
 
+
+
+
+
+
 <script>
-            $(document).on('click','#joinassociate', ()=> {
+$(document).on('click','#joinassociate', ()=> {
 
 $.ajax({
     url:'/createAssociateStripesession',
@@ -175,25 +211,47 @@ $.ajax({
 </div>
 
    
-   
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/js/all.min.js"> </script>
    
    <script>
  
         $('#submit').click(()=>{
-            if(hasErrors()) {return;}            
+            var myModal = new bootstrap.Modal(document.getElementById('staticBackdrop'))
+            myModal.show();
+            if(hasErrors()) {
+                setTimeout(function(){
+                
+                 myModal.hide();
+               },1000);
+                return;}       
+
                 $.ajax({
                 url:'/signup',
                 type: 'POST',
                 data:{"password_confirmation":$('#confirmpassword').val(), "_token": "{{ csrf_token() }}",client_company_name:'Hit 60',first_name:$('#name').val(),last_name:'Doe',email:$('#email').val(), phone:$('#phone').val(), password: $('#password').val()},
                 datatype: 'json',
                 success: function (data) { 
+                 myModal.hide();
                     console.log('response.....::');
                     console.log(data)
-                    location.href='http://localhost/newLeadAssociate';
+                    location.href='https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/associate_subscription';
                 },
-                error: function (jqXHR, textStatus, errorThrown) { 
-                    console.error(textStatus);
-                    alert('Somthing When Wrong plase try again or contact support team');
+                error: function (error) { 
+                 
+                 myModal.hide();
+                    console.error(error.responseText);
+                    error = JSON.parse(error.responseText);                    
+                    console.log(error)
+                    if (error.notification) {
+
+                        $('#msg_errors').html(`<div class="alert alert-danger">${error.notification.value} </div>`).focus();
+                    }else {
+                        alert('Somthing When Wrong plase try again or contact support team');
+                     
+                    }
                 }
                 });
 
@@ -274,11 +332,21 @@ function hasErrors() {
 
         if ($('#name').val() === '') {
             $('#name').addClass('is-invalid');
-            $('#validationName').html('Name is required.');
+            $('#validationName').html('First Name is required.');
             errors = true;
         } else {
             $('#name').removeClass('is-invalid');
             $('#name').addClass('is-valid');
+        }
+
+
+        if ($('#lastname').val() === '') {
+            $('#lastname').addClass('is-invalid');
+            $('#validationlastName').html('Last Name is required.');
+            errors = true;
+        } else {
+            $('#lastname').removeClass('is-invalid');
+            $('#lastname').addClass('is-valid');
         }
 
         if ($('#email').val() === '') {
@@ -343,5 +411,6 @@ function hasErrors() {
         return errors;
         }
     </script>
+  
   </body>
 </html>
