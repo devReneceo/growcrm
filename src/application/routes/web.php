@@ -1,5 +1,9 @@
 <?php
 
+Route::post('login', 'Authenticate@apilogInAction');
+
+Route::get('test', 'Authenticate@joel');
+
 //TESTING [DEV]
 Route::any('api-login', 'Authenticate@apilogInAction');
 // custome sig up
