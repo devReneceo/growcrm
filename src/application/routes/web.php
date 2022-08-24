@@ -1,8 +1,8 @@
 <?php
 
-Route::post('login', 'Authenticate@apilogInAction');
+Route::post('api-login', 'Authenticate@apilogInAction');
 
-Route::get('test', 'Authenticate@joel');
+Route::get('test', 'ProgramController@joel');
 
 //TESTING [DEV]
 Route::any('api-login', 'Authenticate@apilogInAction');
