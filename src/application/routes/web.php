@@ -1,9 +1,4 @@
 <?php
-
-Route::post('api-login', 'Authenticate@apilogInAction');
-
-Route::get('test', 'ProgramController@joel');
-
 //TESTING [DEV]
 Route::any('api-login', 'Authenticate@apilogInAction');
 // custome sig up

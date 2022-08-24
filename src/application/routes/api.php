@@ -21,7 +21,7 @@ Route::get('test', [ProgramController::class, 'joel']);
 // });
 
 Route::group(['prefix' => 'app'], function () {
-    Route::post('/daily-report', [ProgramController::class, 'dailyReport']);
+    Route::post('daily-report', [ProgramController::class, 'dailyReport']);
     Route::post('/new-program', [ProgramController::class, 'newProgram']);
     Route::post('/new-dailyReport', [ProgramController::class, 'newDayReport']);
     Route::post('/update-dailyReport', [
