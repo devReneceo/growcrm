@@ -271,7 +271,7 @@ $('#submitLogin').click(()=>{
                     console.log('response.....::');
                     console.log(data)
                     //newLeadAssociate
-                   // location.href='http://localhost/';
+                   /location.href='https://installedgrowcrm-p4fwy2ceeq-uc.a.run.app/associate_subscription';
                 },
                 error: function (jqXHR, textStatus, errorThrown) {  
                     console.log(textStatus);
