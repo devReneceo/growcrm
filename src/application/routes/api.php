@@ -14,8 +14,8 @@ use App\Http\Controllers\Authenticate;
 | is assigned the "api" middleware group. Enjoy building your API!
 |[ProgramController::class, 'testttt']
 */
-Route::post('/login', [Authenticate::class, 'apilogInAction']);
-Route::get('/test', [ProgramController::class, 'joel']);
+Route::post('login', [Authenticate::class, 'apilogInAction']);
+Route::get('test', [ProgramController::class, 'joel']);
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
