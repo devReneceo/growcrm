@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Hit60\ProgramController;
+use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\Authenticate;
 
 /*
@@ -16,12 +16,13 @@ use App\Http\Controllers\Authenticate;
 */
 Route::post('login', [Authenticate::class, 'apilogInAction']);
 Route::get('test', [ProgramController::class, 'joel']);
-Route::post('daily-report', [ProgramController::class, 'dailyReport']);
+
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
 
 Route::group(['prefix' => 'app'], function () {
+    Route::post('daily-report', [ProgramController::class, 'dailyReport']);
     Route::post('new-program', [ProgramController::class, 'newProgram']);
     Route::post('new-dailyReport', [ProgramController::class, 'newDayReport']);
     Route::post('update-dailyReport', [

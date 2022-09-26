@@ -1,6 +1,7 @@
 <?php
 
 Route::group(['prefix' => 'app'], function () {
+    Route::get('daily-report', [ProgramController::class, 'dailyReport']);
     Route::post('daily-report', [ProgramController::class, 'dailyReport']);
     Route::post('new-program', [ProgramController::class, 'newProgram']);
     Route::post('new-dailyReport', [ProgramController::class, 'newDayReport']);
