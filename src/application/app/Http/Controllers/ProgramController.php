@@ -20,40 +20,7 @@ class ProgramController extends Controller
     {
         $user = $request->input('user');
         $day = $request->input('day');
-
-        $remainders = '[]';
-        $program = Program::where('user_id', $user)
-            ->take(1)
-            ->get();
-
-        if (!$program) {
-            echo json_encode([]);
-            die();
-        }
-        $program = $program[0];
-
-        $dailyReport = DailyReport::where('program_id', $program->id)
-            ->where('start_date', $day)
-            ->get();
-
-        $remainders = Remainder::where('program_id', $program->id)->get();
-
-        if (count($remainders) == 0) {
-            $remainders = '[]';
-        }
-
-        echo json_encode([
-            'program' => [
-                'id' => $program->id,
-                'user_id' => $program->user_id,
-                'daily_settings' => $program->daily_settings,
-                'time_settings' => $program->time_settings,
-                'current_daily_id' => $program->current_daily_id,
-                'current_days' => $program->current_days,
-                'dailyReports' => $dailyReport,
-                'remainders' => $remainders,
-            ],
-        ]);
+        echo json_encode(['test' => $user, 'day' => $day]);
     }
 
     public function newProgram(Request $request)
