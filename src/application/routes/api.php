@@ -16,13 +16,13 @@ use App\Http\Controllers\Authenticate;
 */
 Route::post('login', [Authenticate::class, 'apilogInAction']);
 Route::post('test', 'ProgramController@joel');
-
+Route::get('dailyreport', 'ProgramController@dailyReport');
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
 
 Route::group(['prefix' => 'app'], function () {
-    Route::get('daily-report', 'ProgramController@dailyReport');
+    Route::get('dailyreport', 'ProgramController@dailyReport');
     Route::post('new-program', 'ProgramController@newProgram');
     Route::post('new-dailyReport', 'ProgramController@newDayReport');
     Route::post('update-dailyReport', 'ProgramController@updateDailyReport');
