@@ -18,23 +18,27 @@ class ProgramController extends Controller
 
     public function dailyReport(Request $request)
     {
-        $user = $request->input('user');
-        $day = $request->input('day');
+        try {
+            $user = $request->input('user');
+            $day = $request->input('day');
 
-        $remainders = '[]';
-        $program = Program::where('user_id', $user)
-            ->take(1)
-            ->get();
-        if (empty($program)) {
-            echo json_encode([]);
-            die();
+            $remainders = '[]';
+            $program = Program::where('user_id', $user)
+                ->take(1)
+                ->get();
+
+            if (empty($program)) {
+                return json_encode([]);
+            }
+
+            echo json_encode([
+                'test3222' => $user,
+                'day' => $day,
+                'program' => $program,
+            ]);
+        } catch (Throwable $th) {
+            echo json_encode($th);
         }
-
-        echo json_encode([
-            'test' => $user,
-            'day' => $day,
-            'program' => $program,
-        ]);
     }
 
     public function newProgram(Request $request)
