@@ -15,7 +15,7 @@ use App\Http\Controllers\Authenticate;
 |[ProgramController::class, 'testttt']
 */
 Route::post('login', [Authenticate::class, 'apilogInAction']);
-Route::get('test', [ProgramController::class, 'joel']);
+Route::get('test', 'ProgramController@joel');
 
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
