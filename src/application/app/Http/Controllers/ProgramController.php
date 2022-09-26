@@ -25,7 +25,7 @@ class ProgramController extends Controller
         $program = Program::where('user_id', $user)
             ->take(1)
             ->get();
-        if (!$program) {
+        if (empty($program)) {
             echo json_encode([]);
             die();
         }
