@@ -27,12 +27,12 @@ class ProgramController extends Controller
                 ->take(1)
                 ->get();
 
-            if (empty($program)) {
+            if (!count($program)) {
                 return json_encode([]);
             }
 
             echo json_encode([
-                'test3222' => $user,
+                '4444444' => $user,
                 'day' => $day,
                 'program' => $program,
             ]);
