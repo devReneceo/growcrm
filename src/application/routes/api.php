@@ -15,24 +15,21 @@ use App\Http\Controllers\Authenticate;
 |[ProgramController::class, 'testttt']
 */
 Route::post('login', [Authenticate::class, 'apilogInAction']);
-Route::get('test', 'ProgramController@joel');
+Route::post('test', 'ProgramController@joel');
 
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
 
 Route::group(['prefix' => 'app'], function () {
-    Route::post('daily-report', [ProgramController::class, 'dailyReport']);
-    Route::post('new-program', [ProgramController::class, 'newProgram']);
-    Route::post('new-dailyReport', [ProgramController::class, 'newDayReport']);
-    Route::post('update-dailyReport', [
-        ProgramController::class,
-        'updateDailyReport',
-    ]);
-    Route::post('update-dailyReport-notes', [
-        ProgramController::class,
-        'updateDailyReportNotes',
-    ]);
+    Route::get('daily-report', 'ProgramController@dailyReport');
+    Route::post('new-program', 'ProgramController@newProgram');
+    Route::post('new-dailyReport', 'ProgramController@newDayReport');
+    Route::post('update-dailyReport', 'ProgramController@updateDailyReport');
+    Route::post(
+        'update-dailyReport-notes',
+        'ProgramController@updateDailyReportNotes'
+    );
     Route::post('add-remainder', [ProgramController::class, 'addRemainder']);
     Route::post('dailySettings', [ProgramController::class, 'dailySettings']);
     Route::post('get-program-days', [

@@ -13,7 +13,7 @@ class ProgramController extends Controller
 {
     public function joel(Request $request)
     {
-        return json_encode(['test' => 'okok']);
+        echo json_encode(['test' => 'okok']);
     }
 
     public function dailyReport(Request $request)
