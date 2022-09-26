@@ -20,7 +20,8 @@ class ProgramController extends Controller
     {
         $user = $request->input('user');
         $day = $request->input('day');
-
+        echo json_encode(['test' => $user, 'day' => $day]);
+        die();
         $remainders = '[]';
         $program = Program::where('user_id', $user)
             ->take(1)
