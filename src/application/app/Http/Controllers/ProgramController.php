@@ -29,7 +29,12 @@ class ProgramController extends Controller
             echo json_encode([]);
             die();
         }
-        echo json_encode(['test' => $user, 'day' => $day]);
+
+        echo json_encode([
+            'test' => $user,
+            'day' => $day,
+            'program' => $program,
+        ]);
     }
 
     public function newProgram(Request $request)
