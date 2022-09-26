@@ -25,7 +25,8 @@ class ProgramController extends Controller
             ->get();
 
         if (!$program) {
-            return json_encode([]);
+            echo json_encode([]);
+            die();
         }
         $program = $program[0];
 
@@ -39,7 +40,7 @@ class ProgramController extends Controller
             $remainders = '[]';
         }
 
-        return json_encode([
+        echo json_encode([
             'program' => [
                 'id' => $program->id,
                 'user_id' => $program->user_id,
