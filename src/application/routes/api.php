@@ -22,7 +22,7 @@ Route::get('dailyreport', 'ProgramController@dailyReport');
 // });
 
 Route::group(['prefix' => 'app'], function () {
-    Route::get('dailyreport', 'ProgramController@dailyReport');
+    Route::get('daily-report', 'ProgramController@dailyReport');
     Route::post('new-program', 'ProgramController@newProgram');
     Route::post('new-dailyReport', 'ProgramController@newDayReport');
     Route::post('update-dailyReport', 'ProgramController@updateDailyReport');
