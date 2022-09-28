@@ -17,7 +17,9 @@ use App\Http\Controllers\Authenticate;
 Route::post('login', [Authenticate::class, 'apilogInAction']);
 Route::post('test', 'ProgramController@joel');
 Route::post('dailyreport', 'ProgramController@dailyReport');
-
+Route::any('print', function () {
+    echo json_encode(['status' => 'Hello World']);
+});
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
