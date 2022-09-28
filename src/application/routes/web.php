@@ -2,7 +2,7 @@
 
 //TESTING [DEV]
 Route::get('webTest', function () {
-    echo json_encode(['test' => 'okok']);
+    return json_encode(['test' => 'okok']);
 });
 Route::any('api-login', 'Authenticate@apilogInAction');
 
