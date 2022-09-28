@@ -1,9 +1,4 @@
 <?php
-
-//TESTING [DEV]
-Route::get('webTest', function () {
-    return json_encode(['test' => 'okok']);
-});
 Route::any('api-login', 'Authenticate@apilogInAction');
 
 // custome sig up
