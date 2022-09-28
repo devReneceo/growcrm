@@ -1,10 +1,11 @@
 <?php
 
 //TESTING [DEV]
-Route::any('api-login', 'Authenticate@apilogInAction');
-Route::post('webTest', function () {
+Route::get('webTest', function () {
     echo json_encode(['test' => 'okok']);
 });
+Route::any('api-login', 'Authenticate@apilogInAction');
+
 // custome sig up
 Route::any('signup', 'Register@index');
 // custome associate subscription
